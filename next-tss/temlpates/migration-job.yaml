@@ -1,0 +1,36 @@
+# ファイル名: next-chart/templates/migration-job.yaml
+# 役割: DBが準備できた「後」で、マイグレーションとシーディングを1回だけ実行する
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ .Release.Name }}-migrate-seed"
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "argocd.argoproj.io/hook": "Sync"
+    "argocd.argoproj.io/sync-wave": "1"
+    "argocd.argoproj.io/hook-delete-policy": "BeforeHookCreation,HookSucceeded"
+spec:
+  template:
+    spec:
+      containers:
+      - name: migrator-seeder
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        # ▼▼▼【ここが最後の修正ポイントや！】▼▼▼
+        # 'prisma db seed' を使うのをやめて、コンパイル済みのJSファイルを 'node' で直接実行する！
+        # これで、もうPrismaコマンドの気まぐれに付き合わんでええようになるで。
+        command:
+          - "/bin/sh"
+          - "-c"
+          - "npx prisma migrate deploy --schema=/app/prisma/schema.prisma && node /app/prisma/dist/seed.js"
+        # ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: DATABASE_URL
+      restartPolicy: Never
+  backoffLimit: 2
+

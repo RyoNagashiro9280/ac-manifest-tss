@@ -1,0 +1,22 @@
+replicaCount: 5
+image:
+  repository: rnagashiro/my-nextjs-app
+  pullPolicy: IfNotPresent
+  tag: "9f5438a" # ← CIがここを書き換える
+service:
+  type: ClusterIP
+  port: 3000 # Next.jsアプリがリッスンするポート
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: infopia.nqg1t0.com # ★アプリ用の新しいドメイン名
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: my-nextjs-app-tls # ★証明書のSecret名
+      hosts:
+        - infopia.nqg1t0.com

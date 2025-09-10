@@ -13,7 +13,7 @@ spec:
   - port: 5432
     targetPort: 5432
   selector:
-    app.kubernetes.io/name: postgres
+    app.kubernetes.io.name: postgres
     app.kubernetes.io/instance: "{{ .Release.Name }}"
 
 ---
@@ -153,3 +153,42 @@ spec:
               secretKeyRef:
                 name: postgres-secret
                 key: DATABASE_URL
+---
+# ====================================================================
+# Ingress (Wave 3) - アプリへの入口
+# ====================================================================
+{{- if .Values.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: "{{ .Release.Name }}"
+  namespace: "{{ .Release.Namespace }}"
+  annotations:
+    # sync-waveを"3"にすることで、アプリ(Wave 2)が準備できた後に作られるようにする
+    "argocd.argoproj.io/sync-wave": "3"
+    {{- toYaml .Values.ingress.annotations | nindent 4 }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  tls:
+  {{- range .Values.ingress.tls }}
+    - hosts:
+      {{- toYaml .hosts | nindent 8 }}
+      secretName: {{ .secretName }}
+  {{- end }}
+  rules:
+  {{- range .Values.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+        {{- range .paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: "{{ $.Release.Name }}"
+                port:
+                  number: {{ $.Values.service.port }}
+        {{- end }}
+  {{- end }}
+{{- end }}
+

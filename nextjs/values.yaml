@@ -47,7 +47,5 @@ tolerations: []
 affinity: {}
 
 prisma:
-  # 事前に作成したSecretの名前を指定します
-  existingSecret: "my-postgres-secret"
-  # Secret内でDATABASE_URLが格納されているキーの名前
+  existingSecret: "postgres-secret"
   databaseUrlKey: "database-url"

@@ -8,14 +8,12 @@ metadata:
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }} # <- このように書き換える
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
-  annotations:
-    # ★これがHelmフックの設定！
-    # install時とupgrade時に、他のリソースより先に実行される
+annotations:
     "helm.sh/hook": "pre-install,pre-upgrade"
-    # ★フックの重み。数字が小さいほど先に実行される
     "helm.sh/hook-weight": "-5"
-    # ★Jobが成功したら、関連するPodと一緒に自動で削除してくれる
-    "helm.sh/hook-delete-policy": "hook-succeeded"
+    # hook-succeeded: Jobが成功したら、このJobリソースを削除
+    # before-hook-creation: 新しいJobを作る前に、もし古い同じ名前のJobがあれば先に削除
+    "helm.sh/hook-delete-policy": "hook-succeeded,before-hook-creation"
 spec:
   template:
     metadata:

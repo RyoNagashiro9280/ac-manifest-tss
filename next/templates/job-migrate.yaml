@@ -5,7 +5,7 @@ kind: Job
 metadata:
   name: {{ .Release.Name }}-migrate-job
   labels:
-    helm.sh/chart: {{ include "my-chart.chart" . }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }} # <- このように書き換える
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
   annotations:

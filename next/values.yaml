@@ -1,0 +1,39 @@
+# values.yaml
+# このチャートで使う、変更可能な設定値をここにまとめるんや
+
+replicaCount: 5
+
+image:
+  repository: rnagashiro/my-nextjs-app # CI/CDがビルドしたDockerイメージのリポジトリ
+  pullPolicy: IfNotPresent
+  # tagはCI/CDパイプライン（GitHub Actions）が自動で書き換えるから、空っぽでもええで
+  tag: "9f5438a"
+
+service:
+  type: ClusterIP
+  port: 3000 # Next.jsアプリがリッスンするポート
+
+# PostgreSQLの設定も、ここで管理すると便利やで
+postgresql:
+  image: "postgres:15"
+  storage:
+    size: 1Gi
+    storageClassName: "local-path"
+
+# Ingress（外部からの入口）の設定
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    # 他にも必要なアノテーションがあれば、ここに追加してな
+  hosts:
+    - host: infopia.nqg1t0.com # ★アプリ用のドメイン名
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: my-nextjs-app-tls # ★証明書を保存するSecretの名前
+      hosts:
+        - infopia.nqg1t0.com
+

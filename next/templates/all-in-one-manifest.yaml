@@ -1,0 +1,205 @@
+# all-in-one-manifests.yaml
+
+# -------------------
+# PostgreSQL用 Secret
+# -------------------
+# 解説: DBのパスワードを安全に管理します。values.yamlにはありませんでしたが、
+#       実践的には必須のため追加しています。実際のパスワードはBase64エンコードされます。
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-release-postgresql
+  labels:
+    helm.sh/chart: my-chart-0.1.0
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/instance: my-release
+    app.kubernetes.io/managed-by: Helm
+type: Opaque
+stringData:
+  password: "your-super-secret-password" # 本番環境ではもっと複雑なパスワードを自動生成してください
+
+---
+# -------------------------
+# PostgreSQL用 Service (Headless)
+# -------------------------
+# 解説: StatefulSetの各Podに安定したネットワークIDを提供するためのServiceです。
+#       アプリからは `my-release-postgresql-0.my-release-postgresql.(namespace).svc.cluster.local`
+#       のようなDNS名で直接Podにアクセスできます。
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-release-postgresql
+  labels:
+    helm.sh/chart: my-chart-0.1.0
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/instance: my-release
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  clusterIP: None # Headless Service
+  ports:
+    - name: postgresql
+      port: 5432
+      targetPort: 5432
+  selector:
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/instance: my-release
+
+---
+# -------------------------
+# PostgreSQL用 StatefulSet
+# -------------------------
+# 解説: データベースのように状態を持つアプリケーションを管理します。
+#       Podには固定のIDが振られ、データはPersistentVolumeClaimを通じて永続化されます。
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: my-release-postgresql
+  labels:
+    helm.sh/chart: my-chart-0.1.0
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/instance: my-release
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  serviceName: my-release-postgresql
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: postgresql
+      app.kubernetes.io/instance: my-release
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: postgresql
+        app.kubernetes.io/instance: my-release
+    spec:
+      containers:
+        - name: postgresql
+          image: "postgres:15"
+          ports:
+            - name: postgresql
+              containerPort: 5432
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: my-release-postgresql
+                  key: password
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: "local-path"
+        resources:
+          requests:
+            storage: 1Gi
+
+---
+# -------------------------
+# Next.jsアプリ用 Service
+# -------------------------
+# 解説: Next.jsアプリの複数のPodに対する単一のアクセスポイントを提供します。
+#       IngressはこのServiceにトラフィックを転送します。
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-release-my-nextjs-app
+  labels:
+    helm.sh/chart: my-chart-0.1.0
+    app.kubernetes.io/name: my-nextjs-app
+    app.kubernetes.io/instance: my-release
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80 # Serviceが公開するポート
+      targetPort: 3000 # Pod(コンテナ)がリッスンしているポート
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: my-nextjs-app
+    app.kubernetes.io/instance: my-release
+
+---
+# -------------------------
+# Next.jsアプリ用 Deployment
+# -------------------------
+# 解説: Next.jsアプリのPodを管理します。replicaCountで指定された数のPodを
+#       常に維持するように動作します。
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-release-my-nextjs-app
+  labels:
+    helm.sh/chart: my-chart-0.1.0
+    app.kubernetes.io/name: my-nextjs-app
+    app.kubernetes.io/instance: my-release
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: my-nextjs-app
+      app.kubernetes.io/instance: my-release
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: my-nextjs-app
+        app.kubernetes.io/instance: my-release
+    spec:
+      containers:
+        - name: my-nextjs-app
+          image: "rnagashiro/my-nextjs-app:9f5438a"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          # 実運用ではlivenessProbeとreadinessProbeの設定を推奨します
+          # livenessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+          # readinessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+
+---
+# -------------------------
+# Ingress
+# -------------------------
+# 解説: 外部からのHTTP/HTTPSリクエストをクラスタ内部のServiceに転送するルールを定義します。
+#       SSL証明書の自動取得もここでの設定がトリガーになります。
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-release-my-nextjs-app
+  labels:
+    helm.sh/chart: my-chart-0.1.0
+    app.kubernetes.io/name: my-nextjs-app
+    app.kubernetes.io/instance: my-release
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: "nginx"
+  rules:
+    - host: "infopia.nqg1t0.com"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: my-release-my-nextjs-app
+                port:
+                  number: 80 # Serviceのポート番号
+  tls:
+    - hosts:
+        - "infopia.nqg1t0.com"
+      secretName: my-nextjs-app-tls

@@ -36,4 +36,5 @@ ingress:
     - secretName: my-nextjs-app-tls # ★証明書を保存するSecretの名前
       hosts:
         - infopia.nqg1t0.com
-
+migration:
+  enabled: true

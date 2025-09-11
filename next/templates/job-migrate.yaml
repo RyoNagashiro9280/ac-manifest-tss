@@ -1,0 +1,46 @@
+# templates/job-migrate.yaml
+{{- if .Values.migration.enabled -}} # values.yamlで有効化した場合のみJobを作成
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-migrate-job
+  labels:
+    helm.sh/chart: {{ include "my-chart.chart" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  annotations:
+    # ★これがHelmフックの設定！
+    # install時とupgrade時に、他のリソースより先に実行される
+    "helm.sh/hook": "pre-install,pre-upgrade"
+    # ★フックの重み。数字が小さいほど先に実行される
+    "helm.sh/hook-weight": "-5"
+    # ★Jobが成功したら、関連するPodと一緒に自動で削除してくれる
+    "helm.sh/hook-delete-policy": "hook-succeeded"
+spec:
+  template:
+    metadata:
+      name: {{ .Release.Name }}-migrate-job
+      labels:
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      # Podが失敗したら再起動しない（失敗原因をログで調査しやすくするため）
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          # ★アプリ本体と同じイメージを使う
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          # ★package.jsonに追加したスクリプトを実行
+          command: ["npm", "run", "db:deploy"]
+          env:
+            # ★重要：アプリ本体と同じDB接続情報を環境変数で渡す
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: my-release-postgresql # DBのSecret名
+                  key: database-url # Secret内のキー (例)
+            # 他に必要な環境変数があればここに追加
+  # Jobが完了するまでの時間（デフォルトは600秒）
+  backoffLimit: 1
+{{- end }}

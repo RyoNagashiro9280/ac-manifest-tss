@@ -17,27 +17,28 @@ spec:
         app.kubernetes.io/name: {{ .Chart.Name }}
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
-      containers:
-        - name: {{ .Chart.Name }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          ports:
-            - name: http
-              containerPort: {{ .Values.service.port }}
-              protocol: TCP
-          # ▼▼▼ Secretから環境変数を読み込む設定を追加 ▼▼▼
-          env:
-          - name: DATABASE_URL
-            valueFrom:
-              secretKeyRef:
-                # 前のステップで作成したSecretの名前を指定します
-                name: my-nextjs-secrets
-                key: DATABASE_URL
-          - name: COOKIE_NAME
-            valueFrom:
-              secretKeyRef:
-                name: my-nextjs-secrets
-                key: COOKIE_NAME
+    containers:
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+          - name: http
+            containerPort: {{ .Values.service.port }}
+            protocol: TCP
+        # ▼▼▼ Secretから環境変数を読み込む設定を追加 ▼▼▼
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              # 前のステップで作成したSecretの名前を指定します
+              name: my-nextjs-secrets
+              key: DATABASE_URL
+        - name: COOKIE_NAME
+          valueFrom:
+            secretKeyRef:
+              name: my-nextjs-secrets
+              key: COOKIE_NAME
+
           # ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
           # livenessProbe:
           #   httpGet:

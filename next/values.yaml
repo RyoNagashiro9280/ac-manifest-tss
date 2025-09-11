@@ -2,24 +2,20 @@
 # このチャートで使う、変更可能な設定値をここにまとめるんや
 
 replicaCount: 5
-
 image:
   repository: rnagashiro/my-nextjs-app # CI/CDがビルドしたDockerイメージのリポジトリ
   pullPolicy: IfNotPresent
   # tagはCI/CDパイプライン（GitHub Actions）が自動で書き換えるから、空っぽでもええで
-  tag: "9f5438a"
-
+  tag: "d65b5c1"
 service:
   type: ClusterIP
   port: 3000 # Next.jsアプリがリッスンするポート
-
 # PostgreSQLの設定も、ここで管理すると便利やで
 postgresql:
   image: "postgres:15"
   storage:
     size: 1Gi
     storageClassName: "local-path"
-
 # Ingress（外部からの入口）の設定
 ingress:
   enabled: true

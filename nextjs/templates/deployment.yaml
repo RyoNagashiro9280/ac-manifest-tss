@@ -2,48 +2,37 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Release.Name }}
-  labels:
-    app.kubernetes.io/name: {{ .Chart.Name }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
+  namespace: "{{ .Release.Namespace }}"
+  annotations:
+    # マイグレーション(wave:1)の後に実行される第2陣
+    "argocd.argoproj.io/sync-wave": "2"
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ .Chart.Name }}
-      app.kubernetes.io/instance: {{ .Release.Name }}
+      {{- include "next-chart.labels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: {{ .Chart.Name }}
-        app.kubernetes.io/instance: {{ .Release.Name }}
+        {{- include "next-chart.labels" . | nindent 8 }}
     spec:
       containers:
         - name: {{ .Chart.Name }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default "latest" }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}
               protocol: TCP
-          # ▼▼▼ Secretから環境変数を読み込む設定を追加 ▼▼▼
+          # ▼▼▼【ここが最新の正しい設定や！】▼▼▼
           env:
           - name: DATABASE_URL
             valueFrom:
               secretKeyRef:
-                # 前のステップで作成したSecretの名前を指定します
-                name: my-nextjs-secrets
+                # 取扱説明書の手順1-aで作ったSecretの名前を指定するんや
+                name: postgres-secret
                 key: DATABASE_URL
-          - name: COOKIE_NAME
-            valueFrom:
-              secretKeyRef:
-                name: my-nextjs-secrets
-                key: COOKIE_NAME
-          # ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
-          # livenessProbe:
-          #   httpGet:
-          #     path: /
-          #     port: http
-          # readinessProbe:
-          #   httpGet:
-          #     path: /
-          #     port: http
+          # もしCOOKIE_NAMEみたいな他の環境変数が必要なら、
+          # 同じようにSecretに追加して、ここにも書き足していってな
+          # ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+

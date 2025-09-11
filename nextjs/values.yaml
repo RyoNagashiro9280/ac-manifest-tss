@@ -1,22 +1,47 @@
+# values.yaml
 replicaCount: 5
+
 image:
   repository: rnagashiro/my-nextjs-app
   pullPolicy: IfNotPresent
-  tag: "9f5438a" # ← CIがここを書き換える
+  tag: "9f5438a"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podSecurityContext: {}
+securityContext: {}
+
 service:
   type: ClusterIP
-  port: 3000 # Next.jsアプリがリッスンするポート
+  port: 3000
+  targetPort: 3000 # Next.jsアプリは通常3000番でリッスンするのでtargetPortも合わせます
+
 ingress:
   enabled: true
   className: "nginx"
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
-    - host: infopia.nqg1t0.com # ★アプリ用の新しいドメイン名
+    - host: infopia.nqg1t0.com
       paths:
         - path: /
           pathType: Prefix
   tls:
-    - secretName: my-nextjs-app-tls # ★証明書のSecret名
+    - secretName: my-nextjs-app-tls
       hosts:
         - infopia.nqg1t0.com
+
+resources: {}
+autoscaling:
+  enabled: false
+nodeSelector: {}
+tolerations: []
+affinity: {}

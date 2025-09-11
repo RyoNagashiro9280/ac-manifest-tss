@@ -1,38 +1,60 @@
+# templates/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}
-  namespace: "{{ .Release.Namespace }}"
-  annotations:
-    # マイグレーション(wave:1)の後に実行される第2陣
-    "argocd.argoproj.io/sync-wave": "2"
+  name: {{ include "my-nextjs-app.fullname" . }}
+  labels:
+    {{- include "my-nextjs-app.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "next-chart.labels" . | nindent 6 }}
+      {{- include "my-nextjs-app.selectorLabels" . | nindent 6 }}
   template:
     metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       labels:
-        {{- include "next-chart.labels" . | nindent 8 }}
+        {{- include "my-nextjs-app.selectorLabels" . | nindent 8 }}
     spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "my-nextjs-app.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default "latest" }}"
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http
-              containerPort: {{ .Values.service.port }}
+              containerPort: {{ .Values.service.targetPort }}
               protocol: TCP
-          # ▼▼▼【ここが最新の正しい設定や！】▼▼▼
-          env:
-          - name: DATABASE_URL
-            valueFrom:
-              secretKeyRef:
-                # 取扱説明書の手順1-aで作ったSecretの名前を指定するんや
-                name: postgres-secret
-                key: DATABASE_URL
-          # もしCOOKIE_NAMEみたいな他の環境変数が必要なら、
-          # 同じようにSecretに追加して、ここにも書き足していってな
-          # ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
-
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

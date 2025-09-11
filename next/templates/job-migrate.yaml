@@ -28,18 +28,17 @@ spec:
       restartPolicy: Never
       containers:
         - name: migrate
-          # ★アプリ本体と同じイメージを使う
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          # ★package.jsonに追加したスクリプトを実行
           command: ["npm", "run", "db:deploy"]
           env:
-            # ★重要：アプリ本体と同じDB接続情報を環境変数で渡す
-            - name: DATABASE_URL
+            - name: PG_PASSWORD # 1. まず 'password' キーからパスワードを読み込む
               valueFrom:
                 secretKeyRef:
-                  name: my-release-postgresql # DBのSecret名
-                  key: database-url # Secret内のキー (例)
+                  name: my-release-postgresql
+                  key: password # ★確定したキー名 'password' を指定
+            - name: DATABASE_URL # 2. 読み込んだパスワードを使って完全な接続URLを組み立てる
+              value: "postgresql://postgres:$(PG_PASSWORD)@my-release-postgresql:5432/postgres?schema=public"
             # 他に必要な環境変数があればここに追加
   # Jobが完了するまでの時間（デフォルトは600秒）
   backoffLimit: 1

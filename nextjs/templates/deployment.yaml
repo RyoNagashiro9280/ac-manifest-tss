@@ -36,6 +36,16 @@ spec:
             - name: http
               containerPort: {{ .Values.service.targetPort }}
               protocol: TCP
+
+          # ↓↓↓ ここから追加しました ↓↓↓
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.prisma.existingSecret }}
+                  key: {{ .Values.prisma.databaseUrlKey }}
+          # ↑↑↑ ここまで追加しました ↑↑↑
+
           livenessProbe:
             httpGet:
               path: /

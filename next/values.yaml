@@ -13,7 +13,11 @@ service:
 # ★ アプリケーション用の環境変数を追加
 app:
   env:
-    cookieName: "user-status" # 好きなクッキー名をここに設定
+    cookieName: "session-infopia"
+    emailServerUser: "ainfopiaf6@gmail.com"
+    emailFrom: "ainfopiaf6@gmail.com"
+    # ★ localhostから本番ドメインに変更
+    nextPublicBaseUrl: "https://infopia.nqg1t0.com"
 # PostgreSQLの設定も、ここで管理すると便利やで
 postgresql:
   image: "postgres:15"

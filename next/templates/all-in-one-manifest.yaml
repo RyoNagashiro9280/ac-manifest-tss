@@ -164,19 +164,40 @@ spec:
           # ★ ここから環境変数の設定を追記しました ★
           # ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
           env:
-            # --- データベース接続情報 ---
+            # --- データベース接続情報 (PostgreSQLのHelmチャートのデフォルト値を使用) ---
+            - name: PG_USER
+              value: "postgres" # PostgreSQLチャートのデフォルトユーザー名
+            - name: PG_DB_NAME
+              value: "postgres" # PostgreSQLチャートのデフォルトDB名
             - name: PG_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  # PostgreSQLのSecretとキーを参照
-                  name: my-release-postgresql
+                  name: {{ .Release.Name }}-postgresql
                   key: password
             - name: DATABASE_URL
-              value: "postgresql://postgres:$(PG_PASSWORD)@my-release-postgresql:5432/postgres?schema=public"
+              value: "postgresql://$(PG_USER):$(PG_PASSWORD)@{{ .Release.Name }}-postgresql:5432/$(PG_DB_NAME)?schema=public"
 
-            # --- アプリケーション設定 ---
+            # --- アプリケーション設定 (values.yamlから) ---
             - name: COOKIE_NAME
-              value: "my-secure-session-cookie" # 例：セッション用のクッキー名
+              value: {{ .Values.app.env.cookieName | quote }}
+            - name: EMAIL_SERVER_USER
+              value: {{ .Values.app.env.emailServerUser | quote }}
+            - name: EMAIL_FROM
+              value: {{ .Values.app.env.emailFrom | quote }}
+            - name: NEXT_PUBLIC_BASE_URL
+              value: {{ .Values.app.env.nextPublicBaseUrl | quote }}
+
+            # --- アプリケーション設定 (my-app-secrets Secretから) ---
+            - name: SECRET_COOKIE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: my-app-secrets
+                  key: secret-cookie-password # ★.env.localのキー名に合わせる
+            - name: EMAIL_SERVER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: my-app-secrets
+                  key: email-server-password # ★.env.localのキー名に合わせる
             
             # - name: JWT_SECRET # 他に必要な環境変数があればここに追加
             #   value: "your-super-secret-jwt-key"

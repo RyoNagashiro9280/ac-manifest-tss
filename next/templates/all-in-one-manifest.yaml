@@ -159,6 +159,30 @@ spec:
             - name: http
               containerPort: 3000
               protocol: TCP
+          
+          # ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+          # ★ ここから環境変数の設定を追記しました ★
+          # ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+          env:
+            # --- データベース接続情報 ---
+            - name: PG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  # PostgreSQLのSecretとキーを参照
+                  name: my-release-postgresql
+                  key: password
+            - name: DATABASE_URL
+              value: "postgresql://postgres:$(PG_PASSWORD)@my-release-postgresql:5432/postgres?schema=public"
+
+            # --- アプリケーション設定 ---
+            - name: COOKIE_NAME
+              value: "my-secure-session-cookie" # 例：セッション用のクッキー名
+            
+            # - name: JWT_SECRET # 他に必要な環境変数があればここに追加
+            #   value: "your-super-secret-jwt-key"
+          # ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+          # ★ ここまでが追記部分です ★
+          # ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
           # 実運用ではlivenessProbeとreadinessProbeの設定を推奨します
           # livenessProbe:
           #   httpGet:

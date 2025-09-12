@@ -10,6 +10,10 @@ image:
 service:
   type: ClusterIP
   port: 3000 # Next.jsアプリがリッスンするポート
+# ★ アプリケーション用の環境変数を追加
+app:
+  env:
+    cookieName: "user-status" # 好きなクッキー名をここに設定
 # PostgreSQLの設定も、ここで管理すると便利やで
 postgresql:
   image: "postgres:15"

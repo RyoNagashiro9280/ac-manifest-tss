@@ -1,43 +1,48 @@
-# templates/job-migrate.yaml
-{{- if .Values.migration.enabled -}} # values.yamlで有効化した場合のみJobを作成
+{{- if .Values.migration.enabled -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: {{ .Release.Name }}-migrate-job
   labels:
-    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }} # <- このように書き換える
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
-annotations:
+  annotations:
     "helm.sh/hook": "pre-install,pre-upgrade"
-    "helm.sh/hook-weight": "-5"
-    # hook-succeeded: Jobが成功したら、このJobリソースを削除
-    # before-hook-creation: 新しいJobを作る前に、もし古い同じ名前のJobがあれば先に削除
     "helm.sh/hook-delete-policy": "hook-succeeded,before-hook-creation"
+    "helm.sh/hook-weight": "-5"
 spec:
+  selector:
+    matchLabels:
+      job-name: {{ .Release.Name }}-migrate-job
   template:
     metadata:
-      name: {{ .Release.Name }}-migrate-job
       labels:
-        app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/instance: {{ .Release.Name }}
+        job-name: {{ .Release.Name }}-migrate-job
     spec:
-      # Podが失敗したら再起動しない（失敗原因をログで調査しやすくするため）
       restartPolicy: Never
       containers:
         - name: migrate
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command: ["npm", "run", "db:deploy"]
+          # ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+          # ★ このenvセクションを、.env.localに合わせて修正します ★
+          # ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
           env:
-            - name: PG_PASSWORD # 1. まず 'password' キーからパスワードを読み込む
+            # --- データベース接続情報 ---
+            - name: PG_USER
+              value: "user" # .env.localの値
+            - name: PG_DB_NAME
+              value: "mydatabase" # .env.localの値
+            - name: PG_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: my-release-postgresql
-                  key: password # ★確定したキー名 'password' を指定
-            - name: DATABASE_URL # 2. 読み込んだパスワードを使って完全な接続URLを組み立てる
-              value: "postgresql://postgres:$(PG_PASSWORD)@my-release-postgresql:5432/postgres?schema=public"
-            # 他に必要な環境変数があればここに追加
-  # Jobが完了するまでの時間（デフォルトは600秒）
+                  # ★ {{ .Release.Name }} を使って動的にする
+                  name: {{ .Release.Name }}-postgresql
+                  key: password
+            - name: DATABASE_URL
+              # ★ PG_USERとPG_DB_NAMEを使うように修正
+              value: "postgresql://$(PG_USER):$(PG_PASSWORD)@{{ .Release.Name }}-postgresql:5432/$(PG_DB_NAME)?schema=public"
   backoffLimit: 1
 {{- end }}

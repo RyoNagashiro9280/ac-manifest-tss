@@ -126,14 +126,13 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  # ★リリース名 `tss-pre` に合わせて名前を統一
   name: tss-pre-my-nextjs-app
   namespace: tss-pre
   labels:
     app.kubernetes.io/instance: tss-pre
     app.kubernetes.io/name: my-nextjs-app
 spec:
-  replicas: 1 # まずは1で試すことを推奨
+  replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/instance: tss-pre
@@ -146,23 +145,22 @@ spec:
     spec:
       containers:
         - name: my-nextjs-app
-          image: "rnagashiro/my-nextjs-app:d65b5c1" # ★最新のイメージタグに更新
+          image: "rnagashiro/my-nextjs-app:d65b5c1"
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
           env:
             # --- データベース接続情報 ---
             - name: PG_USER
-              value: "user" # .env.localの値
+              value: "user" # ★ 'postgres' から '.env.local' の 'user' に修正
             - name: PG_DB_NAME
-              value: "mydatabase" # .env.localの値
+              value: "mydatabase" # ★ 'postgres' から '.env.local' の 'mydatabase' に修正
             - name: PG_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: tss-pre-postgresql
                   key: password
             - name: DATABASE_URL
-              # ★ すべて固定値に書き換え
               value: "postgresql://$(PG_USER):$(PG_PASSWORD)@tss-pre-postgresql:5432/$(PG_DB_NAME)?schema=public"
 
             # --- アプリケーション設定 (固定値) ---
@@ -179,10 +177,10 @@ spec:
             - name: SECRET_COOKIE_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: my-app-secrets # 事前に作成したSecret
+                  name: my-app-secrets
                   key: secret-cookie-password
             - name: EMAIL_SERVER_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: my-app-secrets # 事前に作成したSecret
+                  name: my-app-secrets
                   key: email-server-password

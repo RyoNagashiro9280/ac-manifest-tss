@@ -184,3 +184,34 @@ spec:
                 secretKeyRef:
                   name: my-app-secrets
                   key: email-server-password
+---
+# -------------------------
+# Ingress
+# -------------------------
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tss-pre-my-nextjs-app
+  namespace: tss-pre
+  labels:
+    app.kubernetes.io/instance: tss-pre
+    app.kubernetes.io/name: my-nextjs-app
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: "nginx"
+  rules:
+    - host: "infopia.nqg1t0.com"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: tss-pre-my-nextjs-app
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - "infopia.nqg1t0.com"
+      secretName: my-nextjs-app-tls                  

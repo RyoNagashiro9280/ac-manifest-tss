@@ -1,90 +1,88 @@
-# all-in-one-manifests.yaml
+# all-in-one-manifests.yaml (最終確定版・固定値バージョン)
 
 # -------------------
 # PostgreSQL用 Secret
 # -------------------
-# 解説: DBのパスワードを安全に管理します。values.yamlにはありませんでしたが、
-#       実践的には必須のため追加しています。実際のパスワードはBase64エンコードされます。
+# 解説: DBのパスワードを安全に管理します。
 apiVersion: v1
 kind: Secret
 metadata:
-  name: my-release-postgresql
+  # ★リリース名 `tss-pre` に合わせて名前を統一
+  name: tss-pre-postgresql
+  namespace: tss-pre
   labels:
-    helm.sh/chart: my-chart-0.1.0
+    app.kubernetes.io/instance: tss-pre
     app.kubernetes.io/name: postgresql
-    app.kubernetes.io/instance: my-release
-    app.kubernetes.io/managed-by: Helm
 type: Opaque
 stringData:
-  password: "your-super-secret-password" # 本番環境ではもっと複雑なパスワードを自動生成してください
+  # ★キー名は 'password'
+  password: "your-super-secret-password" # ここは実際のDBパスワード
 
 ---
 # -------------------------
-# PostgreSQL用 Service (Headless)
+# PostgreSQL用 Service
 # -------------------------
-# 解説: StatefulSetの各Podに安定したネットワークIDを提供するためのServiceです。
-#       アプリからは `my-release-postgresql-0.my-release-postgresql.(namespace).svc.cluster.local`
-#       のようなDNS名で直接Podにアクセスできます。
 apiVersion: v1
 kind: Service
 metadata:
-  name: my-release-postgresql
+  # ★リリース名 `tss-pre` に合わせて名前を統一
+  name: tss-pre-postgresql
+  namespace: tss-pre
   labels:
-    helm.sh/chart: my-chart-0.1.0
+    app.kubernetes.io/instance: tss-pre
     app.kubernetes.io/name: postgresql
-    app.kubernetes.io/instance: my-release
-    app.kubernetes.io/managed-by: Helm
 spec:
   type: ClusterIP
-  clusterIP: None # Headless Service
   ports:
     - name: postgresql
       port: 5432
       targetPort: 5432
   selector:
+    app.kubernetes.io/instance: tss-pre
     app.kubernetes.io/name: postgresql
-    app.kubernetes.io/instance: my-release
 
 ---
 # -------------------------
 # PostgreSQL用 StatefulSet
 # -------------------------
-# 解説: データベースのように状態を持つアプリケーションを管理します。
-#       Podには固定のIDが振られ、データはPersistentVolumeClaimを通じて永続化されます。
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: my-release-postgresql
+  # ★リリース名 `tss-pre` に合わせて名前を統一
+  name: tss-pre-postgresql
+  namespace: tss-pre
   labels:
-    helm.sh/chart: my-chart-0.1.0
+    app.kubernetes.io/instance: tss-pre
     app.kubernetes.io/name: postgresql
-    app.kubernetes.io/instance: my-release
-    app.kubernetes.io/managed-by: Helm
 spec:
   replicas: 1
-  serviceName: my-release-postgresql
+  serviceName: tss-pre-postgresql
   selector:
     matchLabels:
+      app.kubernetes.io/instance: tss-pre
       app.kubernetes.io/name: postgresql
-      app.kubernetes.io/instance: my-release
   template:
     metadata:
       labels:
+        app.kubernetes.io/instance: tss-pre
         app.kubernetes.io/name: postgresql
-        app.kubernetes.io/instance: my-release
     spec:
       containers:
         - name: postgresql
           image: "postgres:15"
           ports:
-            - name: postgresql
-              containerPort: 5432
+            - containerPort: 5432
           env:
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: my-release-postgresql
+                  name: tss-pre-postgresql
                   key: password
+            # .env.localに合わせてユーザー名とDB名を設定
+            - name: POSTGRES_USER
+              value: "user"
+            - name: POSTGRES_DB
+              value: "mydatabase"
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data
@@ -102,149 +100,89 @@ spec:
 # -------------------------
 # Next.jsアプリ用 Service
 # -------------------------
-# 解説: Next.jsアプリの複数のPodに対する単一のアクセスポイントを提供します。
-#       IngressはこのServiceにトラフィックを転送します。
 apiVersion: v1
 kind: Service
 metadata:
-  name: my-release-my-nextjs-app
+  # ★リリース名 `tss-pre` に合わせて名前を統一
+  name: tss-pre-my-nextjs-app
+  namespace: tss-pre
   labels:
-    helm.sh/chart: my-chart-0.1.0
+    app.kubernetes.io/instance: tss-pre
     app.kubernetes.io/name: my-nextjs-app
-    app.kubernetes.io/instance: my-release
-    app.kubernetes.io/managed-by: Helm
 spec:
   type: ClusterIP
   ports:
-    - port: 80 # Serviceが公開するポート
-      targetPort: 3000 # Pod(コンテナ)がリッスンしているポート
-      protocol: TCP
+    - port: 80
+      targetPort: 3000
       name: http
   selector:
+    app.kubernetes.io/instance: tss-pre
     app.kubernetes.io/name: my-nextjs-app
-    app.kubernetes.io/instance: my-release
 
 ---
 # -------------------------
 # Next.jsアプリ用 Deployment
 # -------------------------
-# 解説: Next.jsアプリのPodを管理します。replicaCountで指定された数のPodを
-#       常に維持するように動作します。
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: my-release-my-nextjs-app
+  # ★リリース名 `tss-pre` に合わせて名前を統一
+  name: tss-pre-my-nextjs-app
+  namespace: tss-pre
   labels:
-    helm.sh/chart: my-chart-0.1.0
+    app.kubernetes.io/instance: tss-pre
     app.kubernetes.io/name: my-nextjs-app
-    app.kubernetes.io/instance: my-release
-    app.kubernetes.io/managed-by: Helm
 spec:
-  replicas: 5
+  replicas: 1 # まずは1で試すことを推奨
   selector:
     matchLabels:
+      app.kubernetes.io/instance: tss-pre
       app.kubernetes.io/name: my-nextjs-app
-      app.kubernetes.io/instance: my-release
   template:
     metadata:
       labels:
+        app.kubernetes.io/instance: tss-pre
         app.kubernetes.io/name: my-nextjs-app
-        app.kubernetes.io/instance: my-release
     spec:
       containers:
         - name: my-nextjs-app
-          image: "rnagashiro/my-nextjs-app:9f5438a"
+          image: "rnagashiro/my-nextjs-app:d65b5c1" # ★最新のイメージタグに更新
           imagePullPolicy: IfNotPresent
           ports:
-            - name: http
-              containerPort: 3000
-              protocol: TCP
-          
-          # ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-          # ★ ここから環境変数の設定を追記しました ★
-          # ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+            - containerPort: 3000
           env:
-            # --- データベース接続情報 (PostgreSQLのHelmチャートのデフォルト値を使用) ---
+            # --- データベース接続情報 ---
             - name: PG_USER
-              value: "postgres" # PostgreSQLチャートのデフォルトユーザー名
+              value: "user" # .env.localの値
             - name: PG_DB_NAME
-              value: "postgres" # PostgreSQLチャートのデフォルトDB名
+              value: "mydatabase" # .env.localの値
             - name: PG_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Release.Name }}-postgresql
+                  name: tss-pre-postgresql
                   key: password
             - name: DATABASE_URL
-              value: "postgresql://$(PG_USER):$(PG_PASSWORD)@{{ .Release.Name }}-postgresql:5432/$(PG_DB_NAME)?schema=public"
+              # ★ すべて固定値に書き換え
+              value: "postgresql://$(PG_USER):$(PG_PASSWORD)@tss-pre-postgresql:5432/$(PG_DB_NAME)?schema=public"
 
-            # --- アプリケーション設定 (values.yamlから) ---
+            # --- アプリケーション設定 (固定値) ---
             - name: COOKIE_NAME
-              value: {{ .Values.app.env.cookieName | quote }}
+              value: "session-infopia"
             - name: EMAIL_SERVER_USER
-              value: {{ .Values.app.env.emailServerUser | quote }}
+              value: "ainfopiaf6@gmail.com"
             - name: EMAIL_FROM
-              value: {{ .Values.app.env.emailFrom | quote }}
+              value: "ainfopiaf6@gmail.com"
             - name: NEXT_PUBLIC_BASE_URL
-              value: {{ .Values.app.env.nextPublicBaseUrl | quote }}
+              value: "https://infopia.nqg1t0.com"
 
-            # --- アプリケーション設定 (my-app-secrets Secretから) ---
+            # --- アプリケーション設定 (Secretから) ---
             - name: SECRET_COOKIE_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: my-app-secrets
-                  key: secret-cookie-password # ★.env.localのキー名に合わせる
+                  name: my-app-secrets # 事前に作成したSecret
+                  key: secret-cookie-password
             - name: EMAIL_SERVER_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: my-app-secrets
-                  key: email-server-password # ★.env.localのキー名に合わせる
-            
-            # - name: JWT_SECRET # 他に必要な環境変数があればここに追加
-            #   value: "your-super-secret-jwt-key"
-          # ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-          # ★ ここまでが追記部分です ★
-          # ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-          # 実運用ではlivenessProbeとreadinessProbeの設定を推奨します
-          # livenessProbe:
-          #   httpGet:
-          #     path: /
-          #     port: http
-          # readinessProbe:
-          #   httpGet:
-          #     path: /
-          #     port: http
-
----
-# -------------------------
-# Ingress
-# -------------------------
-# 解説: 外部からのHTTP/HTTPSリクエストをクラスタ内部のServiceに転送するルールを定義します。
-#       SSL証明書の自動取得もここでの設定がトリガーになります。
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: my-release-my-nextjs-app
-  labels:
-    helm.sh/chart: my-chart-0.1.0
-    app.kubernetes.io/name: my-nextjs-app
-    app.kubernetes.io/instance: my-release
-    app.kubernetes.io/managed-by: Helm
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
-spec:
-  ingressClassName: "nginx"
-  rules:
-    - host: "infopia.nqg1t0.com"
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: my-release-my-nextjs-app
-                port:
-                  number: 80 # Serviceのポート番号
-  tls:
-    - hosts:
-        - "infopia.nqg1t0.com"
-      secretName: my-nextjs-app-tls
+                  name: my-app-secrets # 事前に作成したSecret
+                  key: email-server-password

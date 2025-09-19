@@ -1,0 +1,129 @@
+# all-in-one.yaml
+
+# ===== 1. PersistentVolumeClaim (変更なし) =====
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minecraft-server-data-pvc
+  namespace: mc-server
+spec:
+  storageClassName: local-path
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+# ===== 2. Minecraftサーバー用のService (変更なし) =====
+apiVersion: v1
+kind: Service
+metadata:
+  name: minecraft-server-service
+  namespace: mc-server
+spec:
+  type: LoadBalancer
+  selector:
+    app: minecraft-server
+  ports:
+  - name: minecraft-java
+    protocol: TCP
+    port: 25565
+    targetPort: 25565
+  - name: minecraft-dynmap
+    protocol: TCP
+    port: 8123
+    targetPort: 8123
+  - name: minecraft-bedrock
+    protocol: UDP
+    port: 19132
+    targetPort: 19132
+---
+# ===== 3. SFTPサーバー用のService (変更なし) =====
+apiVersion: v1
+kind: Service
+metadata:
+  name: minecraft-sftp-service
+  namespace: mc-server
+spec:
+  type: LoadBalancer
+  selector:
+    app: minecraft-server
+  ports:
+  - name: sftp
+    protocol: TCP
+    port: 2222
+    targetPort: 2222
+---
+# ===== 4. Deployment (Init Containerのロジックを修正) =====
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minecraft-server-deployment
+  namespace: mc-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minecraft-server
+  template:
+    metadata:
+      labels:
+        app: minecraft-server
+    spec:
+      volumes:
+        - name: minecraft-data
+          persistentVolumeClaim:
+            claimName: minecraft-server-data-pvc
+      
+      # 修正点：Init Containerのコマンドを、初回起動とアップデートの両方に対応できるように変更
+      initContainers:
+      - name: init-minecraft-data
+        image: rnagashiro/minecraft-server:latest # CI/CDで更新されるイメージ
+        command: ['sh', '-c', 'if [ ! -f /data/server.properties ]; then echo "New volume detected. Copying all server files..."; cp -r /server/. /data/; else echo "Existing volume detected. Overwriting server.jar only..."; cp /server/server.jar /data/server.jar; fi']
+        volumeMounts:
+        - name: minecraft-data
+          mountPath: /data
+
+      containers:
+        # ===== Minecraftコンテナ (マウントパスを/dataに統一) =====
+        - name: minecraft
+          image: rnagashiro/minecraft-server:latest # CI/CDで更新されるイメージ
+          stdin: true
+          tty: true
+          ports:
+            - name: java-tcp
+              containerPort: 25565
+              protocol: TCP
+            - name: dynmap-tcp
+              containerPort: 8123
+              protocol: TCP
+            - name: bedrock-udp
+              containerPort: 19132
+              protocol: UDP
+          volumeMounts:
+            - name: minecraft-data
+              mountPath: /data
+          workingDir: /data
+
+        # ===== SFTPサイドカーコンテナ (変更なし) =====
+        - name: sftp-server
+          image: lscr.io/linuxserver/openssh-server:latest
+          ports:
+            - containerPort: 2222
+          env:
+            - name: PUID
+              value: "0"
+            - name: PGID
+              value: "0"
+            - name: USER_NAME
+              value: "mc"
+            - name: SUDO_ACCESS
+              value: "true"
+            - name: PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: sftp-user-pubkey-secret
+                  key: PUBLIC_KEY
+          volumeMounts:
+            - name: minecraft-data
+              mountPath: /data

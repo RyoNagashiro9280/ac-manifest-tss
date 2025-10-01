@@ -143,6 +143,34 @@ spec:
         app.kubernetes.io/instance: tss-pre
         app.kubernetes.io/name: my-nextjs-app
     spec:
+      # ★★★ ここから追加 ★★★
+      initContainers:
+      - name: prisma-migrate
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}" # アプリ本体と同じイメージ
+        # DBが起動して接続可能になるまで待ち、その後マイグレーションを実行するコマンド
+        command:
+        - /bin/sh
+        - -c
+        - |
+          until PGPASSWORD=$PG_PASSWORD psql -h {{ .Release.Name }}-postgresql -U user -d mydatabase -c '\q'; do
+            echo "データベースの準備を待っています..."
+            sleep 2
+          done
+          echo "マイグレーションを実行します..."
+          npm run db:deploy
+        env: # ★ Jobで使っていた環境変数をそのままここに持ってくる
+        - name: PG_USER
+          value: "user"
+        - name: PG_DB_NAME
+          value: "mydatabase"
+        - name: PG_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-postgresql
+              key: password
+        - name: DATABASE_URL
+          value: "postgresql://$(PG_USER):$(PG_PASSWORD)@{{ .Release.Name }}-postgresql:5432/$(PG_DB_NAME)?schema=public"
+      # ★★★ ここまで追加 ★★★
       containers:
         - name: my-nextjs-app
           image: "rnagashiro/my-nextjs-app:d65b5c1"

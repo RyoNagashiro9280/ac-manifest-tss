@@ -186,16 +186,16 @@ spec:
                   name: my-app-secrets
                   key: email-server-password
         - name: prisma-tools
-        image: "rnagashiro/my-nextjs-app:d65b5c1" # ★メインアプリと同じイメージを使う
+          image: "rnagashiro/my-nextjs-app:d65b5c1" # ★メインアプリと同じイメージを使う
         # このコンテナを起動したままにするためのコマンド
-        command: ["/bin/sh", "-c", "tail -f /dev/null"]
-        env:
+          command: ["/bin/sh", "-c", "tail -f /dev/null"]
+          env:
           # ★メインアプリと全く同じDB接続情報を設定する
-          - name: DATABASE_URL
-            valueFrom:
-              secretKeyRef:
-                name: external-db-secret
-                key: database-url
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: external-db-secret
+                  key: database-url
 ---
 # -------------------------
 # Ingress

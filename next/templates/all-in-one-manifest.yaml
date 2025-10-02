@@ -185,8 +185,7 @@ spec:
                 secretKeyRef:
                   name: my-app-secrets
                   key: email-server-password
-                  
-      - name: prisma-tools
+        - name: prisma-tools
         image: "rnagashiro/my-nextjs-app:d65b5c1" # ★メインアプリと同じイメージを使う
         # このコンテナを起動したままにするためのコマンド
         command: ["/bin/sh", "-c", "tail -f /dev/null"]

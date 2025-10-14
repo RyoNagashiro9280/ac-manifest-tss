@@ -19,15 +19,15 @@ app:
     # ★ localhostから本番ドメインに変更
     nextPublicBaseUrl: "https://infopia.nqg1t0.com"
     secretEnv:
-      secretCookiePassword: "your-long-secret-cookie-password-here"
-      emailServerPassword: "your-email-app-password-here"
+      secretCookiePassword: "X6AkaVa549jDzArdMNJudPeXTXjnZthc"
+      emailServerPassword: "vvurlxuidngagqae"
 # PostgreSQLの設定も、ここで管理すると便利やで
 postgresql:
   image: "postgres:15"
   auth:
     username: "user"
     database: "mydabase"
-    password: "your-super-secret-db-password" # CI/CDなどで上書きする
+    password: "password" # CI/CDなどで上書きする
   storage:
     size: 1Gi
     storageClassName: "local-path"

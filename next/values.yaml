@@ -18,9 +18,16 @@ app:
     emailFrom: "ainfopiaf6@gmail.com"
     # ★ localhostから本番ドメインに変更
     nextPublicBaseUrl: "https://infopia.nqg1t0.com"
+    secretEnv:
+      secretCookiePassword: "your-long-secret-cookie-password-here"
+      emailServerPassword: "your-email-app-password-here"
 # PostgreSQLの設定も、ここで管理すると便利やで
 postgresql:
   image: "postgres:15"
+  auth:
+    username: "user"
+    database: "mydabase"
+    password: "your-super-secret-db-password" # CI/CDなどで上書きする
   storage:
     size: 1Gi
     storageClassName: "local-path"
@@ -42,3 +49,9 @@ ingress:
         - infopia.nqg1t0.com
 migration:
   enabled: true
+  # ★ ジョブの具体的な設定を追加
+  image:
+    repository: rnagashiro/my-nextjs-app
+    tag: "bd5bf49" # アプリと同じイメージタグを使うのが一般的
+  # ★ 実行するコマンドを設定
+  command: ["npx", "prisma", "migrate", "deploy"]

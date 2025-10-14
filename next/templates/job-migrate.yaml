@@ -25,24 +25,24 @@ spec:
         - name: migrate
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command: ["npm", "run", "db:deploy"]
-          # ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-          # ★ このenvセクションを、.env.localに合わせて修正します ★
-          # ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+           # ★★★★★ ここを command と args に修正 ★★★★★
+          command: ["/bin/sh", "-c"]
+          args: 
+            - |
+              export DATABASE_URL="postgresql://$(PG_USER):$(PG_PASSWORD)@{{ .Release.Name }}-postgresql:5432/$(PG_DB_NAME)?schema=public"
+              exec npm run db:deploy
+
           env:
-            # --- データベース接続情報 ---
+            # PG_USER, PG_DB_NAME, PG_PASSWORD の定義は変更なし
             - name: PG_USER
-              value: "user" # .env.localの値
+              value: "user"
             - name: PG_DB_NAME
-              value: "mydatabase" # .env.localの値
+              value: "mydatabase"
             - name: PG_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  # ★ {{ .Release.Name }} を使って動的にする
                   name: {{ .Release.Name }}-postgresql
                   key: password
-            - name: DATABASE_URL
-              # ★ PG_USERとPG_DB_NAMEを使うように修正
-              value: "postgresql://$(PG_USER):$(PG_PASSWORD)@{{ .Release.Name }}-postgresql:5432/$(PG_DB_NAME)?schema=public"
+            # DATABASE_URL の定義は command に移動したため削除
   backoffLimit: 1
 {{- end }}

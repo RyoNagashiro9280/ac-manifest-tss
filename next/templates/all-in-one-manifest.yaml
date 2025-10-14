@@ -186,16 +186,22 @@ spec:
                   name: my-app-secrets
                   key: email-server-password
         - name: prisma-tools
-          image: "rnagashiro/my-nextjs-app:d65b5c1" # ★メインアプリと同じイメージを使う
-        # このコンテナを起動したままにするためのコマンド
+          image: "rnagashiro/my-nextjs-app:d65b5c1"
           command: ["/bin/sh", "-c", "tail -f /dev/null"]
           env:
-          # ★メインアプリと全く同じDB接続情報を設定する
-            - name: DATABASE_URL
+            # --- メインアプリと同じDB接続情報を設定 ---
+            - name: PG_USER
+              value: "user"
+            - name: PG_DB_NAME
+              value: "mydatabase"
+            - name: PG_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: external-db-secret
-                  key: database-url
+                  name: tss-pre-postgresql
+                  key: password
+            # DATABASE_URLも同じように設定する
+            - name: DATABASE_URL
+              value: "postgresql://$(PG_USER):$(PG_PASSWORD)@tss-pre-postgresql:5432/$(PG_DB_NAME)?schema=public"
 ---
 # -------------------------
 # Ingress

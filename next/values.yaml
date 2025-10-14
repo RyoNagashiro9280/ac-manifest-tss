@@ -52,6 +52,6 @@ migration:
   # ★ ジョブの具体的な設定を追加
   image:
     repository: rnagashiro/my-nextjs-app
-    tag: "bd5bf49" # アプリと同じイメージタグを使うのが一般的
+    tagSuffix: "-migrator" # アプリと同じイメージタグを使うのが一般的
   # ★ 実行するコマンドを設定
   command: ["npx", "prisma", "migrate", "deploy"]

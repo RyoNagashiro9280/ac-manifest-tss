@@ -23,7 +23,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: migrate
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}{{ .Values.migration.image.tagSuffix }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
            # ★★★★★ ここを command と args に修正 ★★★★★
           command: ["/bin/sh", "-c"]

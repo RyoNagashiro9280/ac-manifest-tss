@@ -2,47 +2,47 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ .Release.Name }}-migrate-job
+  # ★ 1. Job名にイメージタグを含めてユニークにする
+  name: {{ .Release.Name }}-migrate-job-{{ .Values.image.tag }}
   labels:
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
   annotations:
-    "helm.sh/hook": "pre-install,pre-upgrade"
-    "helm.sh/hook-delete-policy": "hook-succeeded,before-hook-creation"
-    "helm.sh/hook-weight": "-5"
+    # ★ 2. ArgoCDのPreSyncフックに変更
+    "argocd.argoproj.io/hook": PreSync
+    # ★ 3. 成功したら自動削除
+    "argocd.argoproj.io/hook-delete-policy": HookSucceeded
 spec:
-  selector:
-    matchLabels:
-      job-name: {{ .Release.Name }}-migrate-job
   template:
     metadata:
       labels:
-        job-name: {{ .Release.Name }}-migrate-job
+        # JobのPodを識別するためのラベル
+        app: {{ .Release.Name }}
+        task: migrate
     spec:
       restartPolicy: Never
       containers:
         - name: migrate
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}{{ .Values.migration.image.tagSuffix }}"
+          image: "{{ .Values.migration.image.repository | default .Values.image.repository }}:{{ .Values.image.tag }}{{ .Values.migration.image.tagSuffix }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-           # ★★★★★ ここを command と args に修正 ★★★★★
-          command: ["/bin/sh", "-c"]
-          args: 
-            - |
-              export DATABASE_URL="postgresql://$(PG_USER):$(PG_PASSWORD)@{{ .Release.Name }}-postgresql:5432/$(PG_DB_NAME)?schema=public"
-              exec npm run db:deploy
+          
+          # ★ 4. コマンドを values.yaml から参照
+          command: {{ .Values.migration.command | toYaml | nindent 12 }}
 
           env:
-            # PG_USER, PG_DB_NAME, PG_PASSWORD の定義は変更なし
+            # ★ 5. DATABASE_URLをここで定義
+            - name: DATABASE_URL
+              value: "postgresql://$(PG_USER):$(PG_PASSWORD)@{{ .Release.Name }}-postgresql:5432/$(PG_DB_NAME)?schema=public"
+            # --- DB接続情報 ---
             - name: PG_USER
-              value: "user"
+              value: {{ .Values.postgresql.auth.username | quote }}
             - name: PG_DB_NAME
-              value: "mydatabase"
+              value: {{ .Values.postgresql.auth.database | quote }}
             - name: PG_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ .Release.Name }}-postgresql
                   key: password
-            # DATABASE_URL の定義は command に移動したため削除
   backoffLimit: 1
 {{- end }}

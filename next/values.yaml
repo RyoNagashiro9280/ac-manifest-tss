@@ -1,57 +1,61 @@
-# values.yaml
 # このチャートで使う、変更可能な設定値をここにまとめるんや
 
-replicaCount: 5
+replicaCount: 1 # ★ 5から1に変更（DBと競合しないよう、最初は1推奨）
+
 image:
   repository: rnagashiro/my-nextjs-app # CI/CDがビルドしたDockerイメージのリポジトリ
   pullPolicy: IfNotPresent
   # tagはCI/CDパイプライン（GitHub Actions）が自動で書き換えるから、空っぽでもええで
-  tag: "03007c9"
+  tag: "latest" # ★ CI/CDで上書きされる想定のデフォルト値
+
 service:
   type: ClusterIP
   port: 3000 # Next.jsアプリがリッスンするポート
-# ★ アプリケーション用の環境変数を追加
+
+# ★ アプリケーション用の環境変数
 app:
   env:
     cookieName: "session-infopia"
     emailServerUser: "ainfopiaf6@gmail.com"
     emailFrom: "ainfopiaf6@gmail.com"
-    # ★ localhostから本番ドメインに変更
     nextPublicBaseUrl: "https://infopia.nqg1t0.com"
-    secretEnv:
-      secretCookiePassword: "X6AkaVa549jDzArdMNJudPeXTXjnZthc"
-      emailServerPassword: "vvurlxuidngagqae"
-# PostgreSQLの設定も、ここで管理すると便利やで
+  # ★ Secretとして管理する環境変数
+  secretEnv:
+    secretCookiePassword: "X6AkaVa549jDzArdMNJudPeXTXjnZthc" # ★ 本番ではVaultやArgoCD Secretで管理推奨
+    emailServerPassword: "vvurlxuidngagqae"            # ★ 本番ではVaultやArgoCD Secretで管理推奨
+
+# PostgreSQLの設定
 postgresql:
   image: "postgres:15"
   auth:
     username: "user"
-    database: "mydabase"
-    password: "password" # CI/CDなどで上書きする
+    database: "mydatabase" # ★ mydabase から mydatabase に修正
+    password: "your-super-secret-password" # ★ CI/CDなどで上書きする
   storage:
     size: 1Gi
     storageClassName: "local-path"
+
 # Ingress（外部からの入口）の設定
 ingress:
   enabled: true
   className: "nginx"
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
-    # 他にも必要なアノテーションがあれば、ここに追加してな
   hosts:
-    - host: infopia.nqg1t0.com # ★アプリ用のドメイン名
+    - host: infopia.nqg1t0.com
       paths:
         - path: /
           pathType: Prefix
   tls:
-    - secretName: my-nextjs-app-tls # ★証明書を保存するSecretの名前
+    - secretName: my-nextjs-app-tls
       hosts:
         - infopia.nqg1t0.com
+
+# DBマイグレーションJobの設定
 migration:
   enabled: true
-  # ★ ジョブの具体的な設定を追加
   image:
-    repository: rnagashiro/my-nextjs-app
-    tagSuffix: "-migrator" # アプリと同じイメージタグを使うのが一般的
-  # ★ 実行するコマンドを設定
+    repository: rnagashiro/my-nextjs-app # アプリ本体と同じイメージ
+    tagSuffix: ""                      # アプリ本体と同じタグを使う
+  # ★ 実行するコマンド
   command: ["npx", "prisma", "migrate", "deploy"]

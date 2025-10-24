@@ -1,16 +1,14 @@
 # このチャートで使う、変更可能な設定値をここにまとめるんや
 
 replicaCount: 1 # ★ 5から1に変更（DBと競合しないよう、最初は1推奨）
-
 image:
   repository: rnagashiro/my-nextjs-app # CI/CDがビルドしたDockerイメージのリポジトリ
   pullPolicy: IfNotPresent
   # tagはCI/CDパイプライン（GitHub Actions）が自動で書き換えるから、空っぽでもええで
-  tag: "8f21e45"
+  tag: "c92eab2"
 service:
   type: ClusterIP
   port: 3000 # Next.jsアプリがリッスンするポート
-
 # ★ アプリケーション用の環境変数
 app:
   env:
@@ -21,8 +19,7 @@ app:
   # ★ Secretとして管理する環境変数
   secretEnv:
     secretCookiePassword: "X6AkaVa549jDzArdMNJudPeXTXjnZthc" # ★ 本番ではVaultやArgoCD Secretで管理推奨
-    emailServerPassword: "vvurlxuidngagqae"            # ★ 本番ではVaultやArgoCD Secretで管理推奨
-
+    emailServerPassword: "vvurlxuidngagqae" # ★ 本番ではVaultやArgoCD Secretで管理推奨
 # PostgreSQLの設定
 postgresql:
   image: "postgres:15"
@@ -33,7 +30,6 @@ postgresql:
   storage:
     size: 1Gi
     storageClassName: "local-path"
-
 # Ingress（外部からの入口）の設定
 ingress:
   enabled: true
@@ -49,12 +45,11 @@ ingress:
     - secretName: my-nextjs-app-tls
       hosts:
         - infopia.nqg1t0.com
-
 # DBマイグレーションJobの設定
 migration:
   enabled: true
   image:
     repository: rnagashiro/my-nextjs-app # アプリ本体と同じイメージ
-    tagSuffix: ""                      # アプリ本体と同じタグを使う
+    tagSuffix: "" # アプリ本体と同じタグを使う
   # ★ 実行するコマンド
   command: ["npx", "prisma", "migrate", "deploy"]

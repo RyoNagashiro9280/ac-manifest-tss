@@ -242,4 +242,40 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ .Release.Name }}-migrate-job-
+  name: {{ .Release.Name }}-migrate-job-{{ .Values.image.tag }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/name: migration-job
+  annotations:
+    # ★ ArgoCD PreSyncフック: Syncの前に実行し、完了を待つ
+    "argocd.argoproj.io/hook": PreSync
+    # ★ 成功したJobを自動で削除する
+    "argocd.argoproj.io/hook-delete-policy": HookSucceeded
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: "{{ .Values.migration.image.repository | default .Values.image.repository }}:{{ .Values.image.tag }}{{ .Values.migration.image.tagSuffix }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          
+          # ★ values.yaml からコマンド配列を読み込む
+          command: {{ .Values.migration.command | toYaml | nindent 12 }}
+          
+          env:
+            # --- Deploymentと同じDB接続情報 ---
+            - name: PG_USER
+              value: {{ .Values.postgresql.auth.username | quote }}
+            - name: PG_DB_NAME
+              value: {{ .Values.postgresql.auth.database | quote }}
+            - name: PG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-postgresql
+                  key: password
+            - name: DATABASE_URL
+              value: "postgresql://$(PG_USER):$(PG_PASSWORD)@{{ .Release.Name }}-postgresql:5432/$(PG_DB_NAME)?schema=public"
+  backoffLimit: 1
+{{- end }}

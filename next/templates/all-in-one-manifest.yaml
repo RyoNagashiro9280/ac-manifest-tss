@@ -1,33 +1,22 @@
-# -------------------
-# アプリ用Secret (Cookie/Emailパスワード)
-# -------------------
-apiVersion: v1
-kind: Secret
-metadata:
-  name: {{ .Release.Name }}-app-secrets
-  namespace: {{ .Release.Namespace }}
-  labels:
-    app.kubernetes.io/instance: {{ .Release.Name }}
-type: Opaque
-stringData:
-  secret-cookie-password: {{ .Values.app.secretEnv.secretCookiePassword | quote }}
-  email-server-password: {{ .Values.app.secretEnv.emailServerPassword | quote }}
+# all-in-one-manifests.yaml (最終確定版・固定値バージョン)
 
----
 # -------------------
-# PostgreSQL用 Secret (DBパスワード)
+# PostgreSQL用 Secret
 # -------------------
+# 解説: DBのパスワードを安全に管理します。
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ .Release.Name }}-postgresql
-  namespace: {{ .Release.Namespace }}
+  # ★リリース名 `tss-pre` に合わせて名前を統一
+  name: tss-pre-postgresql
+  namespace: tss-pre
   labels:
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/instance: tss-pre
     app.kubernetes.io/name: postgresql
 type: Opaque
 stringData:
-  password: {{ .Values.postgresql.auth.password | quote }}
+  # ★キー名は 'password'
+  password: "your-super-secret-password" # ここは実際のDBパスワード
 
 ---
 # -------------------------
@@ -36,10 +25,11 @@ stringData:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Release.Name }}-postgresql
-  namespace: {{ .Release.Namespace }}
+  # ★リリース名 `tss-pre` に合わせて名前を統一
+  name: tss-pre-postgresql
+  namespace: tss-pre
   labels:
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/instance: tss-pre
     app.kubernetes.io/name: postgresql
 spec:
   type: ClusterIP
@@ -48,7 +38,7 @@ spec:
       port: 5432
       targetPort: 5432
   selector:
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/instance: tss-pre
     app.kubernetes.io/name: postgresql
 
 ---
@@ -58,39 +48,41 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ .Release.Name }}-postgresql
-  namespace: {{ .Release.Namespace }}
+  # ★リリース名 `tss-pre` に合わせて名前を統一
+  name: tss-pre-postgresql
+  namespace: tss-pre
   labels:
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/instance: tss-pre
     app.kubernetes.io/name: postgresql
 spec:
   replicas: 1
-  serviceName: {{ .Release.Name }}-postgresql
+  serviceName: tss-pre-postgresql
   selector:
     matchLabels:
-      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/instance: tss-pre
       app.kubernetes.io/name: postgresql
   template:
     metadata:
       labels:
-        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/instance: tss-pre
         app.kubernetes.io/name: postgresql
     spec:
       containers:
         - name: postgresql
-          image: {{ .Values.postgresql.image | quote }}
+          image: "postgres:15"
           ports:
             - containerPort: 5432
           env:
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Release.Name }}-postgresql
+                  name: tss-pre-postgresql
                   key: password
+            # .env.localに合わせてユーザー名とDB名を設定
             - name: POSTGRES_USER
-              value: {{ .Values.postgresql.auth.username | quote }}
+              value: "user"
             - name: POSTGRES_DB
-              value: {{ .Values.postgresql.auth.database | quote }}
+              value: "mydatabase"
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data
@@ -99,10 +91,10 @@ spec:
         name: data
       spec:
         accessModes: ["ReadWriteOnce"]
-        storageClassName: {{ .Values.postgresql.storage.storageClassName | quote }}
+        storageClassName: "local-path"
         resources:
           requests:
-            storage: {{ .Values.postgresql.storage.size | quote }}
+            storage: 1Gi
 
 ---
 # -------------------------
@@ -111,19 +103,20 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Release.Name }}-my-nextjs-app
-  namespace: {{ .Release.Namespace }}
+  # ★リリース名 `tss-pre` に合わせて名前を統一
+  name: tss-pre-my-nextjs-app
+  namespace: tss-pre
   labels:
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/instance: tss-pre
     app.kubernetes.io/name: my-nextjs-app
 spec:
-  type: {{ .Values.service.type | quote }}
+  type: ClusterIP
   ports:
     - port: 80
-      targetPort: {{ .Values.service.port }}
+      targetPort: 3000
       name: http
   selector:
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/instance: tss-pre
     app.kubernetes.io/name: my-nextjs-app
 
 ---
@@ -133,149 +126,110 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}-my-nextjs-app
-  namespace: {{ .Release.Namespace }}
+  name: tss-pre-my-nextjs-app
+  namespace: tss-pre
   labels:
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/instance: tss-pre
     app.kubernetes.io/name: my-nextjs-app
 spec:
-  replicas: {{ .Values.replicaCount }}
+  replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/instance: tss-pre
       app.kubernetes.io/name: my-nextjs-app
   template:
     metadata:
       labels:
-        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/instance: tss-pre
         app.kubernetes.io/name: my-nextjs-app
     spec:
+
       containers:
         - name: my-nextjs-app
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          image: "rnagashiro/my-nextjs-app:d65b5c1"
+          imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: {{ .Values.service.port }}
+            - containerPort: 3000
           env:
             # --- データベース接続情報 ---
             - name: PG_USER
-              value: {{ .Values.postgresql.auth.username | quote }}
+              value: "user" # ★ 'postgres' から '.env.local' の 'user' に修正
             - name: PG_DB_NAME
-              value: {{ .Values.postgresql.auth.database | quote }}
+              value: "mydatabase" # ★ 'postgres' から '.env.local' の 'mydatabase' に修正
             - name: PG_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Release.Name }}-postgresql
+                  name: tss-pre-postgresql
                   key: password
             - name: DATABASE_URL
-              value: "postgresql://$(PG_USER):$(PG_PASSWORD)@{{ .Release.Name }}-postgresql:5432/$(PG_DB_NAME)?schema=public"
-            
-            # --- アプリケーション設定 (values.yamlから) ---
+              value: "postgresql://$(PG_USER):$(PG_PASSWORD)@tss-pre-postgresql:5432/$(PG_DB_NAME)?schema=public"
+
+            # --- アプリケーション設定 (固定値) ---
             - name: COOKIE_NAME
-              value: {{ .Values.app.env.cookieName | quote }}
+              value: "session-infopia"
             - name: EMAIL_SERVER_USER
-              value: {{ .Values.app.env.emailServerUser | quote }}
+              value: "ainfopiaf6@gmail.com"
             - name: EMAIL_FROM
-              value: {{ .Values.app.env.emailFrom | quote }}
+              value: "ainfopiaf6@gmail.com"
             - name: NEXT_PUBLIC_BASE_URL
-              value: {{ .Values.app.env.nextPublicBaseUrl | quote }}
-              
-            # --- アプリケーション設定 (app-secretsから) ---
+              value: "https://infopia.nqg1t0.com"
+
+            # --- アプリケーション設定 (Secretから) ---
             - name: SECRET_COOKIE_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Release.Name }}-app-secrets
+                  name: my-app-secrets
                   key: secret-cookie-password
             - name: EMAIL_SERVER_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Release.Name }}-app-secrets
+                  name: my-app-secrets
                   key: email-server-password
-
+        - name: prisma-tools
+          image: "rnagashiro/my-nextjs-app:d65b5c1"
+          command: ["/bin/sh", "-c", "tail -f /dev/null"]
+          env:
+            # --- メインアプリと同じDB接続情報を設定 ---
+            - name: PG_USER
+              value: "user"
+            - name: PG_DB_NAME
+              value: "mydatabase"
+            - name: PG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: tss-pre-postgresql
+                  key: password
+            # DATABASE_URLも同じように設定する
+            - name: DATABASE_URL
+              value: "postgresql://$(PG_USER):$(PG_PASSWORD)@tss-pre-postgresql:5432/$(PG_DB_NAME)?schema=public"
 ---
 # -------------------------
 # Ingress
 # -------------------------
-{{- if .Values.ingress.enabled -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ .Release.Name }}-my-nextjs-app
-  namespace: {{ .Release.Namespace }}
+  name: tss-pre-my-nextjs-app
+  namespace: tss-pre
   labels:
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/instance: tss-pre
     app.kubernetes.io/name: my-nextjs-app
   annotations:
-    {{- toYaml .Values.ingress.annotations | nindent 4 }}
+    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
-  ingressClassName: {{ .Values.ingress.className | quote }}
+  ingressClassName: "nginx"
   rules:
-    {{- range .Values.ingress.hosts }}
-    - host: {{ .host | quote }}
+    - host: "infopia.nqg1t0.com"
       http:
         paths:
-          {{- range .paths }}
-          - path: {{ .path }}
-            pathType: {{ .pathType }}
+          - path: /
+            pathType: Prefix
             backend:
               service:
-                name: {{ $.Release.Name }}-my-nextjs-app
+                name: tss-pre-my-nextjs-app
                 port:
                   number: 80
-          {{- end }}
-    {{- end }}
   tls:
-    {{- range .Values.ingress.tls }}
     - hosts:
-        {{- range .hosts }}
-        - {{ . | quote }}
-        {{- end }}
-      secretName: {{ .secretName }}
-    {{- end }}
-{{- end }}
-
----
-# -------------------------
-# DBマイグレーションJob (ArgoCD PreSyncフック)
-# -------------------------
-{{- if .Values.migration.enabled -}}
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: {{ .Release.Name }}-migrate-job-{{ .Values.image.tag }}
-  namespace: {{ .Release.Namespace }}
-  labels:
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/name: migration-job
-  annotations:
-    # ★ ArgoCD PreSyncフック: Syncの前に実行し、完了を待つ
-    "argocd.argoproj.io/hook": PreSync
-    # ★ 成功したJobを自動で削除する
-    "argocd.argoproj.io/hook-delete-policy": HookSucceeded
-spec:
-  template:
-    spec:
-      restartPolicy: Never
-      containers:
-        - name: migrate
-          image: "{{ .Values.migration.image.repository | default .Values.image.repository }}:{{ .Values.image.tag }}{{ .Values.migration.image.tagSuffix }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          
-          # ★ values.yaml からコマンド配列を読み込む
-          command: {{ .Values.migration.command | toYaml | nindent 12 }}
-          
-          env:
-            # --- Deploymentと同じDB接続情報 ---
-            - name: PG_USER
-              value: {{ .Values.postgresql.auth.username | quote }}
-            - name: PG_DB_NAME
-              value: {{ .Values.postgresql.auth.database | quote }}
-            - name: PG_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Release.Name }}-postgresql
-                  key: password
-            - name: DATABASE_URL
-              value: "postgresql://$(PG_USER):$(PG_PASSWORD)@{{ .Release.Name }}-postgresql:5432/$(PG_DB_NAME)?schema=public"
-  backoffLimit: 1
-{{- end }}
+        - "infopia.nqg1t0.com"
+      secretName: my-nextjs-app-tls                  

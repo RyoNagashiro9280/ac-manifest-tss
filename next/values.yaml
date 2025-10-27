@@ -41,8 +41,6 @@ postgresql:
   database: "mydatabase"
   storageClass: "local-path"
   storageSize: 1Gi
-
----        
 # ------------------------------------
 # DBマイグレーションJob用設定
 # ------------------------------------

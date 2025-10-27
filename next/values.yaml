@@ -5,15 +5,13 @@ image:
   repository: rnagashiro/my-nextjs-app
   pullPolicy: IfNotPresent
   # ★ CIが '9deb18d' のようなコミットハッシュに書き換える
-  tag: "9deb18d" 
-
+  tag: "a878dd6"
 # ------------------------------------
 # アプリケーション設定
 # ------------------------------------
 appName: my-nextjs-app
 releaseName: tss-pre
 namespace: tss-pre
-
 # ------------------------------------
 # Ingress 設定
 # ------------------------------------
@@ -23,7 +21,6 @@ ingress:
   host: "infopia.nqg1t0.com"
   tlsSecretName: my-nextjs-app-tls
   clusterIssuer: letsencrypt-prod
-
 # ------------------------------------
 # アプリ本体 (Deployment) の固定環境変数
 # ------------------------------------
@@ -32,7 +29,6 @@ appEnv:
   EMAIL_SERVER_USER: "ainfopiaf6@gmail.com"
   EMAIL_FROM: "ainfopiaf6@gmail.com"
   NEXT_PUBLIC_BASE_URL: "https://infopia.nqg1t0.com"
-
 # ------------------------------------
 # DB設定 (PostgreSQL)
 # ------------------------------------
@@ -46,10 +42,8 @@ postgresql:
 # ------------------------------------
 migration:
   enabled: true
-  
   # ★ 'image:' という階層でネストするのが正しい
   image:
     tagSuffix: "-migrator"
-    
   # ★ 'command:' は 'migration:' の直下でOK
   command: ["npm", "run", "db:deploy"]

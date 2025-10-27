@@ -73,10 +73,9 @@ spec:
 migration:
   enabled: true
   
+  # ★ 'image:' という階層でネストするのが正しい
   image:
     tagSuffix: "-migrator"
     
-  # ★★★ 実行するコマンドをここで定義 ★★★
-  # (DockerfileのCMDと同じ 'npm run db:deploy' を指定)
-  # これで「マイグレーション」と「シード」の両方が実行されます。
+  # ★ 'command:' は 'migration:' の直下でOK
   command: ["npm", "run", "db:deploy"]

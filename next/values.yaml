@@ -42,18 +42,16 @@ postgresql:
   storageClass: "local-path"
   storageSize: 1Gi
 
+---        
 # ------------------------------------
-# DBマイグレーションJob用設定 (job-migrate.yaml が参照)
+# DBマイグレーションJob用設定
 # ------------------------------------
 migration:
   enabled: true
   
-  # ★★★★★★★★★★★★★★★★★★★
-  # ★ エラー修正箇所 ★
-  # 'image:' という階層でネストする
-  # ★★★★★★★★★★★★★★★★★★★
+  # ★ 'image:' という階層でネストするのが正しい
   image:
     tagSuffix: "-migrator"
     
-  # 'command:' は 'migration:' の直下でOK
+  # ★ 'command:' は 'migration:' の直下でOK
   command: ["npm", "run", "db:deploy"]

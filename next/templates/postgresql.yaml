@@ -66,16 +66,3 @@ spec:
         resources:
           requests:
             storage: {{ .Values.postgresql.storageSize }}
----        
-# ------------------------------------
-# DBマイグレーションJob用設定
-# ------------------------------------
-migration:
-  enabled: true
-  
-  # ★ 'image:' という階層でネストするのが正しい
-  image:
-    tagSuffix: "-migrator"
-    
-  # ★ 'command:' は 'migration:' の直下でOK
-  command: ["npm", "run", "db:deploy"]

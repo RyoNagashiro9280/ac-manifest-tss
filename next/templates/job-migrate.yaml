@@ -3,18 +3,21 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: {{ .Release.Name }}-migrate-job
+  namespace: {{ .Values.namespace }} # ★ ネームスペースを追加
   labels:
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
   annotations:
+    # "pre-install,pre-upgrade" は、アプリのデプロイ「前」に実行
     "helm.sh/hook": "pre-install,pre-upgrade"
+    # 成功したフック(Job)は自動で削除する
     "helm.sh/hook-delete-policy": "hook-succeeded,before-hook-creation"
+    # 実行順序の重み付け (マイナス値が先に実行)
     "helm.sh/hook-weight": "-5"
 spec:
-  selector:
-    matchLabels:
-      job-name: {{ .Release.Name }}-migrate-job
+  # ★ Jobが失敗した場合、1回だけリトライする
+  backoffLimit: 1
   template:
     metadata:
       labels:
@@ -23,26 +26,27 @@ spec:
       restartPolicy: Never
       containers:
         - name: migrate
+          # ★ values.yaml からイメージ情報を組み立てる
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}{{ .Values.migration.image.tagSuffix }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-           # ★★★★★ ここを command と args に修正 ★★★★★
-          command: ["/bin/sh", "-c"]
-          args: 
-            - |
-              export DATABASE_URL="postgresql://$(PG_USER):$(PG_PASSWORD)@{{ .Release.Name }}-postgresql:5432/$(PG_DB_NAME)?schema=public"
-              exec npm run db:deploy
-
+          
+          # ★★★ values.yaml から command を読み込む ★★★
+          command: {{ .Values.migration.command | toYaml | nindent 12 }}
+          
           env:
-            # PG_USER, PG_DB_NAME, PG_PASSWORD の定義は変更なし
+            # ★★★ values.yaml から DB 情報を読み込む ★★★
             - name: PG_USER
-              value: "user"
+              value: {{ .Values.postgresql.user | quote }}
             - name: PG_DB_NAME
-              value: "mydatabase"
+              value: {{ .Values.postgresql.database | quote }}
             - name: PG_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ .Release.Name }}-postgresql
                   key: password
-            # DATABASE_URL の定義は command に移動したため削除
-  backoffLimit: 1
+            
+            # ★★★ 環境変数として DATABASE_URL を定義する ★★★
+            # (sh -c を使うより、この方がクリーンです)
+            - name: DATABASE_URL
+              value: "postgresql://$(PG_USER):$(PG_PASSWORD)@{{ .Release.Name }}-postgresql:5432/$(PG_DB_NAME)?schema=public"
 {{- end }}

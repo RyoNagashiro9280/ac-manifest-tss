@@ -66,3 +66,17 @@ spec:
         resources:
           requests:
             storage: {{ .Values.postgresql.storageSize }}
+---        
+# ------------------------------------
+# DBマイグレーションJob用設定
+# ------------------------------------
+migration:
+  enabled: true
+  
+  image:
+    tagSuffix: "-migrator"
+    
+  # ★★★ 実行するコマンドをここで定義 ★★★
+  # (DockerfileのCMDと同じ 'npm run db:deploy' を指定)
+  # これで「マイグレーション」と「シード」の両方が実行されます。
+  command: ["npm", "run", "db:deploy"]

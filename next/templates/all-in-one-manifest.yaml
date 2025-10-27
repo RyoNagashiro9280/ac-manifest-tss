@@ -13,10 +13,21 @@ metadata:
   labels:
     app.kubernetes.io/instance: tss-pre
     app.kubernetes.io/name: postgresql
+  # ★Deploymentが参照している名前（my-app-secrets）
+  name: my-app-secrets
+  # ★Deploymentと同じネームスペース（tss-pre）
+  namespace: tss-pre
 type: Opaque
 stringData:
   # ★キー名は 'password'
-  password: "your-super-secret-password" # ここは実際のDBパスワード
+  password: "password" # ここは実際のDBパスワード
+  # .env.local から値を取得
+  
+  # ★Deploymentが 'secretKeyRef' で要求しているキー
+  secret-cookie-password: "X6AkaVa549jDzArdMNJudPeXTXjnZthc"
+  
+  # ★Deploymentが 'secretKeyRef' で要求しているキー
+  email-server-password: "vvurlxuidngagqae"
 
 ---
 # -------------------------

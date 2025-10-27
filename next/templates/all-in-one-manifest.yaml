@@ -1,32 +1,36 @@
-# all-in-one-manifests.yaml (最終確定版・固定値バージョン)
+# all-in-one-manifests.yaml
 
 # -------------------
 # PostgreSQL用 Secret
 # -------------------
-# 解説: DBのパスワードを安全に管理します。
 apiVersion: v1
 kind: Secret
 metadata:
-  # ★リリース名 `tss-pre` に合わせて名前を統一
+  # ★ 1つ目のSecret
   name: tss-pre-postgresql
   namespace: tss-pre
   labels:
     app.kubernetes.io/instance: tss-pre
     app.kubernetes.io/name: postgresql
-  # ★Deploymentが参照している名前（my-app-secrets）
+type: Opaque
+stringData:
+  # ★ PostgreSQL用のパスワード
+  password: "password" # .env.localのPOSTGRES_PASSWORD
+
+---
+# -------------------
+# Next.jsアプリ用 Secret
+# -------------------
+apiVersion: v1
+kind: Secret
+metadata:
+  # ★ 2つ目のSecret
   name: my-app-secrets
-  # ★Deploymentと同じネームスペース（tss-pre）
   namespace: tss-pre
 type: Opaque
 stringData:
-  # ★キー名は 'password'
-  password: "password" # ここは実際のDBパスワード
-  # .env.local から値を取得
-  
-  # ★Deploymentが 'secretKeyRef' で要求しているキー
+  # ★ .env.local から取得したアプリ用の秘密鍵
   secret-cookie-password: "X6AkaVa549jDzArdMNJudPeXTXjnZthc"
-  
-  # ★Deploymentが 'secretKeyRef' で要求しているキー
   email-server-password: "vvurlxuidngagqae"
 
 ---

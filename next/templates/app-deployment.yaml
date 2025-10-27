@@ -20,17 +20,17 @@ spec:
         # コンテナ1: アプリ本体 (Runner)
         # -------------------------
         - name: {{ .Values.appName }}
-          # ★ CI/CDが更新した 'tag' を使う
+          # ★ 'runner' イメージ (例: ...:9deb18d) を使用
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - containerPort: 3000
           env:
             # --- データベース接続情報 ---
             - name: PG_USER
-              value: {{ .Values.postgresql.user }}
+              value: {{ .Values.postgresql.user | quote }}
             - name: PG_DB_NAME
-              value: {{ .Values.postgresql.database }}
+              value: {{ .Values.postgresql.database | quote }}
             - name: PG_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -40,13 +40,13 @@ spec:
               value: "postgresql://$(PG_USER):$(PG_PASSWORD)@{{ .Values.releaseName }}-postgresql:5432/$(PG_DB_NAME)?schema=public"
             # --- アプリケーション設定 (固定値) ---
             - name: COOKIE_NAME
-              value: {{ .Values.appEnv.COOKIE_NAME }}
+              value: {{ .Values.appEnv.COOKIE_NAME | quote }}
             - name: EMAIL_SERVER_USER
-              value: {{ .Values.appEnv.EMAIL_SERVER_USER }}
+              value: {{ .Values.appEnv.EMAIL_SERVER_USER | quote }}
             - name: EMAIL_FROM
-              value: {{ .Values.appEnv.EMAIL_FROM }}
+              value: {{ .Values.appEnv.EMAIL_FROM | quote }}
             - name: NEXT_PUBLIC_BASE_URL
-              value: {{ .Values.appEnv.NEXT_PUBLIC_BASE_URL }}
+              value: {{ .Values.appEnv.NEXT_PUBLIC_BASE_URL | quote }}
             # --- アプリケーション設定 (Secretから) ---
             - name: SECRET_COOKIE_PASSWORD
               valueFrom:
@@ -63,16 +63,19 @@ spec:
         # コンテナ2: Prismaマイグレーション用 (Migrator)
         # -------------------------
         - name: prisma-tools
-          # ★★★ これが修正点 ★★★
-          # CI/CDが更新した 'tag' に '-migrator' を付けたイメージを使う
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}-migrator"
+          # ★★★★★★★★★★★★★★★★★★★
+          # ★ バグ修正箇所 ★
+          # 'migrator' イメージを 'values.yaml' から正しく参照
+          # ★★★★★★★★★★★★★★★★★★★
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}{{ .Values.migration.image.tagSuffix }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }} # ★ PullPolicyを追加
           command: ["/bin/sh", "-c", "tail -f /dev/null"]
           env:
             # --- DB接続情報 (アプリ本体と同一) ---
             - name: PG_USER
-              value: {{ .Values.postgresql.user }}
+              value: {{ .Values.postgresql.user | quote }}
             - name: PG_DB_NAME
-              value: {{ .Values.postgresql.database }}
+              value: {{ .Values.postgresql.database | quote }}
             - name: PG_PASSWORD
               valueFrom:
                 secretKeyRef:

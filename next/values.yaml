@@ -32,36 +32,28 @@ appEnv:
   EMAIL_SERVER_USER: "ainfopiaf6@gmail.com"
   EMAIL_FROM: "ainfopiaf6@gmail.com"
   NEXT_PUBLIC_BASE_URL: "https://infopia.nqg1t0.com"
-  
-  # ※ Secretな値は 'templates/secrets.yaml' に固定値で書くか、
-  #    ExternalSecrets 経由で読み込むのがベストプラクティスです。
 
 # ------------------------------------
 # DB設定 (PostgreSQL)
 # ------------------------------------
 postgresql:
   user: "user"
-  database: "mydatabase" # 古いファイルでは 'mydabase' でしたが 'mydatabase' に修正
+  database: "mydatabase"
   storageClass: "local-path"
   storageSize: 1Gi
-  # ※ DBパスワードは 'templates/secrets.yaml' に固定値で書かれています
 
 # ------------------------------------
-# ★★★ エラー修正箇所 ★★★
 # DBマイグレーションJob用設定 (job-migrate.yaml が参照)
 # ------------------------------------
 migration:
-  # 'enabled: true' が存在することで "nil pointer" エラーが解消します
   enabled: true
   
-  # CI/CDがビルドする '...-migrator' イメージを正しく参照
-  tagSuffix: "-migrator"
-  
-  # Jobが実行するコマンド
-  command: ["npx", "prisma", "migrate", "deploy"]
-  
-  # ★注意:
-  # 'job-migrate.yaml' テンプレートが、
-  # image.repositoryに .Values.image.repository を、
-  # image.tagに .Values.image.tag を使うように
-  # 書かれている必要があります。
+  # ★★★★★★★★★★★★★★★★★★★
+  # ★ エラー修正箇所 ★
+  # 'image:' という階層でネストする
+  # ★★★★★★★★★★★★★★★★★★★
+  image:
+    tagSuffix: "-migrator"
+    
+  # 'command:' は 'migration:' の直下でOK
+  command: ["npm", "run", "db:deploy"]

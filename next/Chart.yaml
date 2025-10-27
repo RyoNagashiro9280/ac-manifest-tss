@@ -1,7 +1,6 @@
 apiVersion: v2
-name: next-chart
-description: A Helm chart for deploying a Next.js application and PostgreSQL on Kubernetes
+name: next
+description: A Helm chart for my Next.js application
 type: application
 version: 0.1.0
 appVersion: "1.0.0"
-

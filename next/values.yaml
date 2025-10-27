@@ -6,7 +6,7 @@ image:
   repository: rnagashiro/my-nextjs-app # CI/CDがビルドしたDockerイメージのリポジトリ
   pullPolicy: IfNotPresent
   # tagはCI/CDパイプライン（GitHub Actions）が自動で書き換えるから、空っぽでもええで
-  tag: "ab6422e"
+  tag: "154ddeb"
 service:
   type: ClusterIP
   port: 3000 # Next.jsアプリがリッスンするポート

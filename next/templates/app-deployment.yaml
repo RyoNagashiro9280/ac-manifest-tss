@@ -59,7 +59,7 @@ spec:
                   name: my-app-secrets
                   key: email-server-password
             - name: OPENAI_API_KEY
-            valueFrom:
+              valueFrom:
               secretKeyRef:
                 name: openai-secret       # 1. で作成したSecret名
                 key: OPENAI_API_KEY    # Secret内のキー名

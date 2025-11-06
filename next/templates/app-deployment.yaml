@@ -60,9 +60,9 @@ spec:
                   key: email-server-password
             - name: OPENAI_API_KEY
               valueFrom:
-              secretKeyRef:
-                name: openai-secret       # 1. で作成したSecret名
-                key: OPENAI_API_KEY    # Secret内のキー名
+                secretKeyRef:
+                  name: openai-secret       # 1. で作成したSecret名
+                  key: OPENAI_API_KEY    # Secret内のキー名
         
         # -------------------------
         # コンテナ2: Prismaマイグレーション用 (Migrator)

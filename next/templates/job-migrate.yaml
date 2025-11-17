@@ -18,6 +18,9 @@ metadata:
 spec:
   # ★ Jobが失敗した場合、1回だけリトライする
   backoffLimit: 1
+    # Jobの最大実行時間を300秒 (5分) に設定
+  # 必要に応じて、この値を大きくしてください (例: 600秒 = 10分)
+  activeDeadlineSeconds: 300 
   template:
     metadata:
       labels:

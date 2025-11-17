@@ -25,6 +25,15 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - containerPort: 3000
+          envFrom:
+            # (もし 'my-app-secrets' も kubectl で管理しているならここに追加)
+            # - secretRef:
+            #     name: my-app-secrets 
+
+            # kubectl で作成した ConfigMap (公開URLなど)
+            - configMapRef:
+                # 'google-callback-url' ではなく 'ConfigMap' で作成したと仮定
+                name: google-app-config
           env:
             # --- データベース接続情報 ---
             - name: PG_USER
@@ -63,6 +72,25 @@ spec:
                 secretKeyRef:
                   name: openai-secret       # 1. で作成したSecret名
                   key: OPENAI_API_KEY    # Secret内のキー名
+            - name: GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  # ★kubectl で作成したSecret名をハードコード
+                  name: google-oauth-credentials 
+                  key: GOOGLE_CLIENT_ID
+            - name: GOOGLE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  # ★kubectl で作成したSecret名をハードコード
+                  name: google-oauth-credentials
+                  key: GOOGLE_CLIENT_SECRET
+            - name: NEXT_PUBLIC_APP_URL
+              valueFrom:
+                secretKeyRef:
+                  # kubectl で作成した Secret 名
+                  name: google-callback-url 
+                  # Secret 内のキー名 (kubectl create で指定した --from-literal=NEXT_PUBLIC_URL)
+                  key: NEXT_PUBLIC_URL
         
         # -------------------------
         # コンテナ2: Prismaマイグレーション用 (Migrator)

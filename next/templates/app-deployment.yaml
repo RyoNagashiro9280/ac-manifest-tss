@@ -91,7 +91,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: google-callback-url # kubectl管理のSecret
-                  key: NEXT_PUBLIC_URL # Secret内のキー名
+                  key: NEXT_PUBLIC_APP_URL # Secret内のキー名
         
         # -------------------------
         # コンテナ2: Prismaマイグレーション用 (Migrator)

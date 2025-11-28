@@ -5,7 +5,7 @@ image:
   repository: rnagashiro/my-nextjs-app
   pullPolicy: IfNotPresent
   # ★ CIが '9deb18d' のようなコミットハッシュに書き換える
-  tag: "eb81abd"
+  tag: "2de207e"
 # ------------------------------------
 # アプリケーション設定
 # ------------------------------------

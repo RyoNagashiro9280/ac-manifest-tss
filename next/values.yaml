@@ -46,4 +46,4 @@ migration:
   image:
     tagSuffix: "-migrator"
   # ★ 'command:' は 'migration:' の直下でOK
-  command: ["npm", "run", "db:deploy"]
+  command: ["npm", "run", "db:migrate"]

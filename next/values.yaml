@@ -47,3 +47,9 @@ migration:
     tagSuffix: "-migrator"
   # ★ 'command:' は 'migration:' の直下でOK
   command: ["npm", "run", "db:migrate"]
+# ------------------------------------
+# DBシーディングJob用設定
+# ------------------------------------
+seeding:
+  enabled: true
+  command: ["npm", "run", "db:seed"]

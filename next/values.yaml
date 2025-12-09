@@ -70,3 +70,5 @@ sandbox:
     requests:
       cpu: 200m
       memory: 256Mi
+  gvisor:
+    enabled: true

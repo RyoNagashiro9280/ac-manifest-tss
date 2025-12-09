@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sandbox-deny-egress
+  namespace: {{ .Values.namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      app: {{ .Values.releaseName }}-sandbox
+  policyTypes:
+    - Egress # 外に出ていく通信を制御
+  egress:
+    # 許可ルールを書かなければ、すべて拒否（インターネットも社内LANも繋がらない）
+    # 必要なら以下のようにDNSだけ許可する
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP

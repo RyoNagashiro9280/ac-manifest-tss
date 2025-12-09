@@ -1,4 +1,3 @@
-# templates/sandbox-deployment.yaml
 {{- if .Values.sandbox.enabled -}}
 apiVersion: apps/v1
 kind: Deployment
@@ -17,20 +16,28 @@ spec:
       labels:
         app: {{ .Values.releaseName }}-sandbox
     spec:
+      # ★★★★★ ここが必須項目です！ ★★★★★
+      # これを書くことで、このPodだけが gVisor (runsc) 経由で起動します。
+      # GKE Sandboxを使う場合も、自力でgVisorを入れた場合も、この指定は共通で必要です。
+      runtimeClassName: gvisor 
+      # ★★★★★★★★★★★★★★★★★★★★★★★
+      {{- if .Values.sandbox.gvisor.enabled }}
+      runtimeClassName: gvisor
+      {{- end }}
+
       containers:
         - name: sandbox
-          # ★ CIで作ったタグ + "-sandbox" を組み合わせる
+          # (以下、元のコードと同じ)
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}{{ .Values.sandbox.image.tagSuffix }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.sandbox.service.port }}
-          # ★ 重要: セキュリティ対策
           securityContext:
             allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true # 書き込み禁止
+            readOnlyRootFilesystem: true
           volumeMounts:
             - name: tmp-volume
-              mountPath: /tmp # /tmp だけは書き込み許可
+              mountPath: /tmp
           resources:
             {{- toYaml .Values.sandbox.resources | nindent 12 }}
       volumes:

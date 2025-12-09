@@ -1,0 +1,15 @@
+# templates/sandbox-service.yaml
+{{- if .Values.sandbox.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.releaseName }}-sandbox-svc
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    app: {{ .Values.releaseName }}-sandbox
+  ports:
+    - protocol: TCP
+      port: 80 # Serviceのポート (Next.jsからはここを叩く)
+      targetPort: {{ .Values.sandbox.service.port }} # コンテナの実ポート
+{{- end }}

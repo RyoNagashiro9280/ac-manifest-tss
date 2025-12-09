@@ -52,6 +52,8 @@ spec:
                   key: password
             - name: DATABASE_URL
               value: "postgresql://$(PG_USER):$(PG_PASSWORD)@{{ .Values.releaseName }}-postgresql:5432/$(PG_DB_NAME)?schema=public"
+            - name: SANDBOX_URL
+              value: "http://{{ .Values.releaseName }}-sandbox-svc:80"
             # --- アプリケーション設定 (固定値) ---
             - name: COOKIE_NAME
               value: {{ .Values.appEnv.COOKIE_NAME | quote }}

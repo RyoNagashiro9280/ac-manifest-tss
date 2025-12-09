@@ -53,3 +53,20 @@ migration:
 seeding:
   enabled: true
   command: ["npm", "run", "db:seed"]
+# ------------------------------------
+# サンドボックス環境 (Code Execution)
+# ------------------------------------
+sandbox:
+  enabled: true
+  replicaCount: 2 # 冗長化のために2つ推奨
+  image:
+    tagSuffix: "-sandbox"
+  service:
+    port: 8080 # サンドボックスアプリが待ち受けるポート
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 256Mi

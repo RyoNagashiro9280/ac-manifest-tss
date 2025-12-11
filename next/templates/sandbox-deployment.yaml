@@ -18,9 +18,7 @@ spec:
     spec:
       # ★★★★★ ここが必須項目です！ ★★★★★
       # これを書くことで、このPodだけが gVisor (runsc) 経由で起動します。
-      # GKE Sandboxを使う場合も、自力でgVisorを入れた場合も、この指定は共通で必要です。
-      runtimeClassName: gvisor 
-      # ★★★★★★★★★★★★★★★★★★★★★★★
+      # GKE Sandboxを使う場合も、自力でgVisorを入れた場合も、この指定は共通で必要です。      # ★★★★★★★★★★★★★★★★★★★★★★★
       {{- if .Values.sandbox.gvisor.enabled }}
       runtimeClassName: gvisor
       {{- end }}

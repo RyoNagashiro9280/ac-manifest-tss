@@ -12,5 +12,4 @@ spec:
   - port: 5432
     targetPort: 5432
   selector:
-    # 'app.kubernetes.io/name: postgres'というラベルが付いたPodを探して、通信を転送する
     app.kubernetes.io/name: postgres

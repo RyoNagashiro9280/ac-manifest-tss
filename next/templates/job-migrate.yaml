@@ -27,7 +27,9 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           workingDir: /app # ★注意: Dockerイメージ内の作業ディレクトリ
           command:
-            {{- .Values.migration.command | toYaml | nindent 12 }}
+          {{- range .Values.migration.command }}
+            - {{ . | quote }}
+          {{- end }}
           env:
             - name: PG_USER
               value: {{ .Values.postgresql.user | quote }}
@@ -71,7 +73,9 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           workingDir: /app # ★注意: Dockerイメージ内の作業ディレクトリ
           command:
-            {{- .Values.seeding.command | toYaml | nindent 12 }}
+          {{- range .Values.seeding.command }}
+            - {{ . | quote }}
+          {{- end }}
           env:
             - name: PG_USER
               value: {{ .Values.postgresql.user | quote }}

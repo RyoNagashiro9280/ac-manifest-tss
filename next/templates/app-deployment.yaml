@@ -6,7 +6,7 @@ metadata:
   labels:
     {{- include "next.labels" . | nindent 4 }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.app.replicaCount }}
   selector:
     matchLabels:
       {{- include "next.selectorLabels" . | nindent 6 }}
@@ -25,6 +25,24 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - containerPort: 3000
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.app.probes.liveness.path }}
+              port: 3000
+            initialDelaySeconds: {{ .Values.app.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.app.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.app.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.app.probes.liveness.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.app.probes.readiness.path }}
+              port: 3000
+            initialDelaySeconds: {{ .Values.app.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.app.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.app.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.app.probes.readiness.failureThreshold }}
+          resources:
+            {{- toYaml .Values.app.resources | nindent 12 }}
 
           # --- ★構文エラー修正: 
           # env: で google-callback-url (Secret) を指定するため、

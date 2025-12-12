@@ -13,6 +13,39 @@ appName: my-nextjs-app
 releaseName: tss-pre
 namespace: tss-pre
 # ------------------------------------
+# アプリ本体 (Deployment) の設定
+# ------------------------------------
+app:
+  replicaCount: 1
+  probes:
+    liveness:
+      path: "/"
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+    readiness:
+      path: "/"
+      initialDelaySeconds: 15
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+  resources:
+    requests:
+      cpu: "200m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+  autoscaling:
+    enabled: false # HPAを有効にする場合はtrueに変更
+    minReplicas: 1
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 80
+  pdb:
+    enabled: false # PDBを有効にする場合はtrueに変更
+    maxUnavailable: 1
+# ------------------------------------
 # Ingress 設定
 # ------------------------------------
 ingress:

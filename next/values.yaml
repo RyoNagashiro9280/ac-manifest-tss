@@ -95,7 +95,7 @@ sandbox:
   image:
     tagSuffix: "-sandbox"
   service:
-    port: 8080 # サンドボックスアプリが待ち受けるポート
+    port: 4000 # サンドボックスアプリが待ち受けるポート
   resources:
     limits:
       cpu: 500m

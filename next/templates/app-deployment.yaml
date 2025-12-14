@@ -6,7 +6,8 @@ metadata:
   labels:
     {{- include "next.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.app.replicaCount }}
+  revisionHistoryLimit: 1
+  replicas: 1
   selector:
     matchLabels:
       {{- include "next.selectorLabels" . | nindent 6 }}

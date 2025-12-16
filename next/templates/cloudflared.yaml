@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudflared
+  namespace: tss-pre
+  labels:
+    app: cloudflared
+spec:
+  replicas: 2 # 高可用性のため2台推奨（勝手に負荷分散されます）
+  selector:
+    matchLabels:
+      app: cloudflared
+  template:
+    metadata:
+      labels:
+        app: cloudflared
+    spec:
+      containers:
+      - name: cloudflared
+        image: cloudflare/cloudflared:latest
+        args:
+        - tunnel
+        # 重要: 引数で run を指定し、トークンなどは環境変数から読む
+        - run
+        env:
+        - name: TUNNEL_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: tunnel-credentials
+              key: token
+        livenessProbe:
+          httpGet:
+            path: /ready
+            port: 2000
+          initialDelaySeconds: 1
+          periodSeconds: 10
+        # 必要なリソース制限などを記述
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi

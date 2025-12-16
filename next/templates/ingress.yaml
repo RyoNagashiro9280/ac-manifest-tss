@@ -20,9 +20,11 @@ spec:
         image: cloudflare/cloudflared:latest
         args:
         - tunnel
-        # ▼ 【追加】ヘルスチェック用のポートを明示的に開く
+        # ▼▼▼ 【重要】この2行を追加してください ▼▼▼
+        # これがないとポート2000が開かず、Liveness Probeが失敗します
         - --metrics
         - 0.0.0.0:2000
+        # ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
         - run
         env:
         - name: TUNNEL_TOKEN
@@ -34,7 +36,7 @@ spec:
           httpGet:
             path: /ready
             port: 2000
-          # ▼ 【変更】起動まで少し待ってあげる (1秒→10秒)
+          # ▼▼▼ 起動直後の失敗を防ぐため、時間を延ばします ▼▼▼
           initialDelaySeconds: 10
           periodSeconds: 10
           failureThreshold: 3

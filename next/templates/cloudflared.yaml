@@ -6,7 +6,7 @@ metadata:
   labels:
     app: cloudflared
 spec:
-  replicas: 2 # 高可用性のため2台推奨（勝手に負荷分散されます）
+  replicas: 2
   selector:
     matchLabels:
       app: cloudflared
@@ -20,7 +20,7 @@ spec:
         image: cloudflare/cloudflared:latest
         args:
         - tunnel
-        # 重要: 引数で run を指定し、トークンなどは環境変数から読む
+        # ▼ argsはシンプルに戻す（metrics指定を削除）
         - run
         env:
         - name: TUNNEL_TOKEN
@@ -31,10 +31,11 @@ spec:
         livenessProbe:
           httpGet:
             path: /ready
-            port: 2000
-          initialDelaySeconds: 1
+            # ▼ ポートをデフォルトの 20241 に変更！
+            port: 20241
+          initialDelaySeconds: 10
           periodSeconds: 10
-        # 必要なリソース制限などを記述
+          failureThreshold: 3
         resources:
           requests:
             cpu: 50m

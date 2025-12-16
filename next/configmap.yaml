@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: tss-pre
+data:
+  # 環境に合わせて値を変更してください
+  NEXT_PUBLIC_APP_URL: "https://infopia.nqg1t0.com"
+  NEXTAUTH_URL: "https://infopia.nqg1t0.com"
+  COOKIE_NAME: "session-infopia"
+  EMAIL_FROM: "infopiaf6@gmail.com"
+  
+  # k8s内部の通信なので、Service名で指定します
+  SANDBOX_URL: "http://tss-pre-sandbox-svc:4000/execute"
+  JUDGE0_API_URL: "http://judge0-service:2358"
+  
+  OPENAI_BASE_URL: "https://api.openai.com/v1"
+  NODE_ENV: "production"
+  PORT: "3000"

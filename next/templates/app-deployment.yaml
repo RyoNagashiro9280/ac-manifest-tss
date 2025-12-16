@@ -21,11 +21,12 @@ spec:
         # コンテナ1: アプリ本体 (Runner)
         # -------------------------
         - name: {{ .Values.appName }}
-          # ★ 'runner' イメージ (例: ...:9deb18d) を使用
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - containerPort: 3000
+          
+          # ... (Probe設定はそのまま) ...
           livenessProbe:
             httpGet:
               path: {{ .Values.app.probes.liveness.path }}
@@ -42,78 +43,78 @@ spec:
             periodSeconds: {{ .Values.app.probes.readiness.periodSeconds }}
             timeoutSeconds: {{ .Values.app.probes.readiness.timeoutSeconds }}
             failureThreshold: {{ .Values.app.probes.readiness.failureThreshold }}
+          
           resources:
             {{- toYaml .Values.app.resources | nindent 12 }}
 
-          # --- ★構文エラー修正: 
-          # env: で google-callback-url (Secret) を指定するため、
-          # 競合する可能性のある google-app-config (ConfigMap) の参照をコメントアウト
+          # ★ 変更点1: ConfigMapを一括読み込み
+          # Git管理している 'app-config' の値をすべて環境変数として取り込みます
           envFrom:
-            # (もし 'my-app-secrets' も kubectl で管理しているならここに追加)
-            # - secretRef:
-            #     name: my-app-secrets 
+            - configMapRef:
+                name: app-config
 
-            # kubectl で作成した ConfigMap (公開URLなど)
-            # - configMapRef:
-            #     # 'google-callback-url' ではなく 'ConfigMap' で作成したと仮定
-            #     name: google-app-config
-
+          # ★ 変更点2: Secretを個別に読み込み
+          # 手動登録した 'app-secrets' から機密情報を取得します
           env:
-            # --- データベース接続情報 ---
+            # --- データベース接続情報 (PostgreSQL) ---
+            # DBホスト名などはHelmの値を使う場合
             - name: PG_USER
               value: {{ .Values.postgresql.user | quote }}
             - name: PG_DB_NAME
               value: {{ .Values.postgresql.database | quote }}
+            # パスワードは app-secrets に含めた DATABASE_URL を使うか、
+            # 別途管理しているならここだけ残す（構成によります）
             - name: PG_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.releaseName }}-postgresql
                   key: password
+            
+            # --- Secretから読み込む環境変数 ---
+            # ※キー名(key)は kubectl create secret で指定した名前(大文字)と一致させる！
+            
             - name: DATABASE_URL
-              value: "postgresql://$(PG_USER):$(PG_PASSWORD)@{{ .Values.releaseName }}-postgresql:5432/$(PG_DB_NAME)?schema=public"
-            - name: SANDBOX_URL
-              value: "http://{{ .Values.releaseName }}-sandbox-svc:4000"
-            # --- アプリケーション設定 (固定値) ---
-            - name: COOKIE_NAME
-              value: {{ .Values.appEnv.COOKIE_NAME | quote }}
-            - name: EMAIL_SERVER_USER
-              value: {{ .Values.appEnv.EMAIL_SERVER_USER | quote }}
-            - name: EMAIL_FROM
-              value: {{ .Values.appEnv.EMAIL_FROM | quote }}
-            - name: NEXT_PUBLIC_BASE_URL
-              value: {{ .Values.appEnv.NEXT_PUBLIC_BASE_URL | quote }}
-            # --- アプリケーション設定 (Secretから) ---
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: DATABASE_URL
+            
             - name: SECRET_COOKIE_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: my-app-secrets # kubectl管理のSecret
-                  key: secret-cookie-password
+                  name: app-secrets
+                  key: SECRET_COOKIE_PASSWORD
+            
+            - name: EMAIL_SERVER_USER
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: EMAIL_SERVER_USER
+
             - name: EMAIL_SERVER_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: my-app-secrets # kubectl管理のSecret
-                  key: email-server-password
+                  name: app-secrets
+                  key: EMAIL_SERVER_PASSWORD
+
             - name: OPENAI_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: openai-secret       # kubectl管理のSecret
+                  name: app-secrets
                   key: OPENAI_API_KEY
+
             - name: GOOGLE_CLIENT_ID
               valueFrom:
                 secretKeyRef:
-                  name: google-oauth-credentials # kubectl管理のSecret
+                  name: app-secrets
                   key: GOOGLE_CLIENT_ID
+
             - name: GOOGLE_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: google-oauth-credentials # kubectl管理のSecret
+                  name: app-secrets
                   key: GOOGLE_CLIENT_SECRET
-            - name: NEXT_PUBLIC_APP_URL
-              valueFrom:
-                secretKeyRef:
-                  name: google-callback-url # kubectl管理のSecret
-                  key: NEXT_PUBLIC_APP_URL # Secret内のキー名
-        
+
         # -------------------------
         # コンテナ2: Prismaマイグレーション用 (Migrator)
         # -------------------------
@@ -122,15 +123,9 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command: ["/bin/sh", "-c", "tail -f /dev/null"]
           env:
-            # --- DB接続情報 (アプリ本体と同一) ---
-            - name: PG_USER
-              value: {{ .Values.postgresql.user | quote }}
-            - name: PG_DB_NAME
-              value: {{ .Values.postgresql.database | quote }}
-            - name: PG_PASSWORD
+            # Migratorにも同じDB接続情報が必要です
+            - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.releaseName }}-postgresql
-                  key: password
-            - name: DATABASE_URL
-              value: "postgresql://$(PG_USER):$(PG_PASSWORD)@{{ .Values.releaseName }}-postgresql:5432/$(PG_DB_NAME)?schema=public"
+                  name: app-secrets
+                  key: DATABASE_URL

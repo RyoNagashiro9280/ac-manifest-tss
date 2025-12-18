@@ -1,1 +1,1 @@
-{{- fail (printf "DEBUG: sandbox is %v" .Values.sandbox) -}}
+{{- fail (printf "DEBUG: sandbox.autoscaling is %v" .Values.sandbox.autoscaling) -}}

@@ -43,7 +43,7 @@ app:
     maxReplicas: 5
     targetCPUUtilizationPercentage: 80
   pdb:
-    enabled: false # PDBを有効にする場合はtrueに変更
+    enabled: true # PDBを有効にする場合はtrueに変更
     maxUnavailable: 1
 # ------------------------------------
 # Ingress 設定
@@ -89,19 +89,24 @@ seeding:
 # ------------------------------------
 # サンドボックス環境 (Code Execution)
 # ------------------------------------
-sandbox:
-  enabled: true
-  replicaCount: 2 # 冗長化のために2つ推奨
-  image:
-    tagSuffix: "-sandbox"
-  service:
-    port: 4000 # サンドボックスアプリが待ち受けるポート
-  resources:
-    limits:
-      cpu: 500m
-      memory: 512Mi
-    requests:
-      cpu: 200m
-      memory: 256Mi
-  gvisor:
+  sandbox:
     enabled: true
+    replicaCount: 2 # 冗長化のために2つ推奨
+    image:
+      tagSuffix: "-sandbox"
+    service:
+      port: 4000 # サンドボックスアプリが待ち受けるポート
+    resources:
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+      requests:
+        cpu: "200m"
+        memory: "256Mi"
+    autoscaling: # サンドボックス用HPA設定を追加
+      enabled: false
+      minReplicas: 1
+      maxReplicas: 5
+      targetCPUUtilizationPercentage: 80
+    gvisor:
+      enabled: true

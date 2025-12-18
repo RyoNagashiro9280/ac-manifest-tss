@@ -1,0 +1,23 @@
+{{- if .Values.sandbox.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ .Values.releaseName }}-sandbox
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.releaseName }}-sandbox # sandbox-deployment.yaml と合わせる
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ .Values.releaseName }}-sandbox # sandbox-deployment.yaml と合わせる
+  minReplicas: {{ .Values.sandbox.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.sandbox.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.sandbox.autoscaling.targetCPUUtilizationPercentage }}
+{{- end }}

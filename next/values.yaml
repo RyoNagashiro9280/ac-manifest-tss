@@ -5,7 +5,7 @@ image:
   repository: rnagashiro/my-nextjs-app
   pullPolicy: IfNotPresent
   # ★ CIが '9deb18d' のようなコミットハッシュに書き換える
-  tag: "21bdc14"
+  tag: "605e85e"
 # ------------------------------------
 # アプリケーション設定
 # ------------------------------------
@@ -86,9 +86,9 @@ migration:
 seeding:
   enabled: true
   command: ["npm", "run", "db:seed"]
-# ------------------------------------
-# サンドボックス環境 (Code Execution)
-# ------------------------------------
+  # ------------------------------------
+  # サンドボックス環境 (Code Execution)
+  # ------------------------------------
   sandbox:
     enabled: true
     replicaCount: 2 # 冗長化のために2つ推奨

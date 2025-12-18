@@ -123,12 +123,12 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command: ["/bin/sh", "-c", "tail -f /dev/null"]
           resources:
-            requests:
-              cpu: "10m"     # 最小限のCPU要求 (0.01コア)
-              memory: "32Mi"
-            limits:
-              cpu: "100m"
-              memory: "128Mi"
+            requests:
+              cpu: "10m"     # 最小限のCPU要求 (0.01コア)
+              memory: "32Mi"
+            limits:
+              cpu: "100m"
+              memory: "128Mi"
           env:
             # Migratorにも同じDB接続情報が必要です
             - name: DATABASE_URL

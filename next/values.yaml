@@ -38,7 +38,7 @@ app:
       cpu: "500m"
       memory: "512Mi"
   autoscaling:
-    enabled: false # HPAを有効にする場合はtrueに変更
+    enabled: true # HPAを有効にする場合はtrueに変更
     minReplicas: 1
     maxReplicas: 5
     targetCPUUtilizationPercentage: 80

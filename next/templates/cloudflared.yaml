@@ -2,11 +2,10 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: cloudflared
-  namespace: tss-pre
+  namespace: {{ .Values.namespace }}
   labels:
     app: cloudflared
 spec:
-  replicas: 2
   selector:
     matchLabels:
       app: cloudflared

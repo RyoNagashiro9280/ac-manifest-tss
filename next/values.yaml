@@ -5,7 +5,7 @@ image:
   repository: rnagashiro/my-nextjs-app
   pullPolicy: IfNotPresent
   # ★ CIが '9deb18d' のようなコミットハッシュに書き換える
-  tag: "605e85e"
+  tag: "a245412"
 # ------------------------------------
 # アプリケーション設定
 # ------------------------------------
@@ -96,7 +96,6 @@ sandbox:
     tagSuffix: "-sandbox"
   service:
     port: 4000
-  
   # ▼ resources ブロック
   resources:
     limits:
@@ -105,16 +104,13 @@ sandbox:
     requests:
       cpu: "200m"
       memory: "256Mi"
-      
-    # ★ ここにあった autoscaling を削除し、下に移動しました
-
+      # ★ ここにあった autoscaling を削除し、下に移動しました
   # ▼ autoscaling ブロック (resourcesと同じ階層にする)
   autoscaling:
     enabled: false
     minReplicas: 1
     maxReplicas: 5
     targetCPUUtilizationPercentage: 80
-
   gvisor:
     enabled: true
 

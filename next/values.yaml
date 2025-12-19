@@ -5,7 +5,7 @@ image:
   repository: rnagashiro/my-nextjs-app
   pullPolicy: IfNotPresent
   # ★ CIが '9deb18d' のようなコミットハッシュに書き換える
-  tag: "a245412"
+  tag: "8001060"
 # ------------------------------------
 # アプリケーション設定
 # ------------------------------------
@@ -113,7 +113,6 @@ sandbox:
     targetCPUUtilizationPercentage: 80
   gvisor:
     enabled: true
-
 # ------------------------------------
 # Cloudflared HPA 設定
 # ------------------------------------

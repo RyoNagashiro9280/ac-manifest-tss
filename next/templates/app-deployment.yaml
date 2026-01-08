@@ -102,7 +102,20 @@ spec:
                 secretKeyRef:
                   name: app-secrets
                   key: OPENAI_API_KEY
-
+            - name: NEXT_PUBLIC_APP_URL
+              value: {{ .Values.appEnv.NEXT_PUBLIC_BASE_URL | quote }}
+              
+            # 2. NEXT_PUBLIC_GOOGLE_CLIENT_ID の追加
+            # ログで「Too small」と出ていた部分です。
+            # アプリは "NEXT_PUBLIC_..." という名前で探していますが、
+            # 設定されていたのは "GOOGLE_CLIENT_ID" (サーバー用) だけでした。
+            # クライアント側でも使うために、同じSecretを別名で読み込みます。
+            - name: NEXT_PUBLIC_GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: GOOGLE_CLIENT_ID  # Secretのキーは元のままでOK
+            
             - name: GOOGLE_CLIENT_ID
               valueFrom:
                 secretKeyRef:

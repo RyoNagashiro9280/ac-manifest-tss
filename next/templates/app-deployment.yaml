@@ -138,10 +138,10 @@ spec:
           resources:
             requests:
               cpu: "10m"     # 最小限のCPU要求 (0.01コア)
-              memory: "32Mi"
+              memory: "512Mi"
             limits:
               cpu: "100m"
-              memory: "512Mi"
+              memory: "1024Mi"
           env:
             # Migratorにも同じDB接続情報が必要です
             - name: DATABASE_URL

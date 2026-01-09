@@ -104,7 +104,7 @@ spec:
                   key: OPENAI_API_KEY
             - name: NEXT_PUBLIC_APP_URL
               value: {{ .Values.appEnv.NEXT_PUBLIC_BASE_URL | quote }}
-              
+
             # 2. NEXT_PUBLIC_GOOGLE_CLIENT_ID の追加
             # ログで「Too small」と出ていた部分です。
             # アプリは "NEXT_PUBLIC_..." という名前で探していますが、
@@ -141,7 +141,7 @@ spec:
               memory: "32Mi"
             limits:
               cpu: "100m"
-              memory: "128Mi"
+              memory: "512Mi"
           env:
             # Migratorにも同じDB接続情報が必要です
             - name: DATABASE_URL

@@ -9,6 +9,8 @@ image:
   pullPolicy: Always
   # ★ CIが自動で書き換えるので、ここはダミーや初期値でOK
   tag: "latest"
+imagePullSecrets: 
+  - name: ghcr-secret
 # ------------------------------------
 # アプリケーション設定
 # ------------------------------------

@@ -4,11 +4,12 @@
 image:
   # ★変更: Docker Hub から GHCR (GitHub Container Registry) へ変更
   # ※ "rnagashiro" の部分は GitHubのユーザー名/組織名 に合わせてください
-  repository: ghcr.io/rnagashiro/my-nextjs-app
+  repository: ghcr.io/kdthesixsense/my-nextjs-app
   # ★推奨: Always にしておくと、万が一同じタグで中身が変わっても確実に新しいものを引けます
   pullPolicy: Always
   # ★ CIが自動で書き換えるので、ここはダミーや初期値でOK
   tag: "latest"
+  digest: ""
 imagePullSecrets: 
   - name: ghcr-secret
 # ------------------------------------
@@ -17,7 +18,6 @@ imagePullSecrets:
 appName: my-nextjs-app
 releaseName: tss-pre
 namespace: tss-pre
-
 # ------------------------------------
 # アプリ本体 (Deployment) の設定
 # ------------------------------------
@@ -85,6 +85,7 @@ migration:
   # ★ 'image:' という階層でネストするのが正しい
   image:
     tagSuffix: "-migrator"
+    digest: "" # ★★★ これを追加してください！ ★★★
   # ★ 'command:' は 'migration:' の直下でOK
   command: ["npm", "run", "db:migrate"]
 # ------------------------------------
@@ -101,6 +102,7 @@ sandbox:
   replicaCount: 2
   image:
     tagSuffix: "-sandbox"
+    digest: ""
   service:
     port: 4000
   # ▼ resources ブロック

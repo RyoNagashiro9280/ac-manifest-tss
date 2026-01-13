@@ -8,7 +8,8 @@ image:
   # ★推奨: Always にしておくと、万が一同じタグで中身が変わっても確実に新しいものを引けます
   pullPolicy: Always
   # ★ CIが自動で書き換えるので、ここはダミーや初期値でOK
-  tag: "442ea09"
+  tag: "d3357c7"
+  digest: sha256:dd5e770b8f992621db989344f624aabd77e754fd6de5982621dbbd80aca14e5e
 # ------------------------------------
 # アプリケーション設定
 # ------------------------------------
@@ -82,6 +83,7 @@ migration:
   # ★ 'image:' という階層でネストするのが正しい
   image:
     tagSuffix: "-migrator"
+    digest: sha256:fa20311b0bf3409cf29f9a40be458bccc4bbef4988e1be7acd43df4db8097ddf
   # ★ 'command:' は 'migration:' の直下でOK
   command: ["npm", "run", "db:migrate"]
 # ------------------------------------
@@ -98,6 +100,7 @@ sandbox:
   replicaCount: 2
   image:
     tagSuffix: "-sandbox"
+    digest: sha256:031e3ded929b58cd9ebdd3bdfa70a5011cae34b8823b6a6ce830e2ddfb65e3f1
   service:
     port: 4000
   # ▼ resources ブロック

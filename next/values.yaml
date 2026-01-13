@@ -2,16 +2,20 @@
 # CI/CD (GitHub Actions) が自動更新する場所
 # ------------------------------------
 image:
-  repository: rnagashiro/my-nextjs-app
-  pullPolicy: IfNotPresent
-  # ★ CIが '9deb18d' のようなコミットハッシュに書き換える
-  tag: "a906426"
+  # ★変更: Docker Hub から GHCR (GitHub Container Registry) へ変更
+  # ※ "rnagashiro" の部分は GitHubのユーザー名/組織名 に合わせてください
+  repository: ghcr.io/rnagashiro/my-nextjs-app
+  # ★推奨: Always にしておくと、万が一同じタグで中身が変わっても確実に新しいものを引けます
+  pullPolicy: Always
+  # ★ CIが自動で書き換えるので、ここはダミーや初期値でOK
+  tag: "latest"
 # ------------------------------------
 # アプリケーション設定
 # ------------------------------------
 appName: my-nextjs-app
 releaseName: tss-pre
 namespace: tss-pre
+
 # ------------------------------------
 # アプリ本体 (Deployment) の設定
 # ------------------------------------
@@ -62,6 +66,7 @@ appEnv:
   EMAIL_SERVER_USER: "ainfopiaf6@gmail.com"
   EMAIL_FROM: "ainfopiaf6@gmail.com"
   NEXT_PUBLIC_BASE_URL: "https://infopia.nqg1t0.com"
+  NEXTAUTH_URL: "https://infopia.nqg1t0.com" # ★NextAuthを使うならこれも必要になることが多いです
 # ------------------------------------
 # DB設定 (PostgreSQL)
 # ------------------------------------

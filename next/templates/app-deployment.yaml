@@ -16,6 +16,14 @@ spec:
       labels:
         {{- include "next.selectorLabels" . | nindent 8 }}
     spec:
+    # ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
+      # ★ここに「values.yaml の imagePullSecrets を使う設定」を追加
+      # これがないと、鍵情報がPodに渡りません！
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      {{- end }}
+      # ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
       containers:
         # -------------------------
         # コンテナ1: アプリ本体 (Runner)

@@ -8,8 +8,8 @@ image:
   # ★推奨: Always にしておくと、万が一同じタグで中身が変わっても確実に新しいものを引けます
   pullPolicy: Always
   # ★ CIが自動で書き換えるので、ここはダミーや初期値でOK
-  tag: "8333fcf"
-  digest: "sha256:a29f544416d9bf62884b7c84c96c8f47f0dba9846139effddffd3ea5ce2bdb7e"
+  tag: "0c15d5e"
+  digest: "sha256:7e1e954fc7f177af807383f8a10f9d8af17e77e162c18ba1ed2dff7ce17b33a6"
 imagePullSecrets:
   - name: ghcr-secret
 # ------------------------------------
@@ -85,7 +85,7 @@ migration:
   # ★ 'image:' という階層でネストするのが正しい
   image:
     tagSuffix: "-migrator"
-    digest: "sha256:7cfd0a15d4cfff121309a66a38bd77762033d2264f32fa4e0c7bd19cc3c395e0" # ★★★ これを追加してください！ ★★★
+    digest: "sha256:9e28ec29c5f57bd127e86238349cac4a3b3640a93b8ebf7b0815c347056592c8" # ★★★ これを追加してください！ ★★★
   # ★ 'command:' は 'migration:' の直下でOK
   command: ["npm", "run", "db:migrate"]
 # ------------------------------------
@@ -102,7 +102,7 @@ sandbox:
   replicaCount: 2
   image:
     tagSuffix: "-sandbox"
-    digest: "sha256:9770ff6dfdda8468fcc46dec135b0c118761aef37da5c29725a86b9925d84816"
+    digest: "sha256:2acbadab4669809b7f486a0fc377913967bc24a97d2467891aca76f36a484196"
   service:
     port: 4000
   # ▼ resources ブロック

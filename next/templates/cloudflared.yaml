@@ -6,6 +6,14 @@ metadata:
   labels:
     app: cloudflared
 spec:
+  # 【最適化1】 高可用性 (HA) 構成
+  # Proxmoxのメンテナンスやアップデート時も通信を維持するため、最低2つ起動します
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       app: cloudflared
@@ -14,12 +22,30 @@ spec:
       labels:
         app: cloudflared
     spec:
+      # 【最適化2】 Podの分散配置 (Anti-Affinity)
+      # 複数のProxmoxノードがある場合、片方のノードが落ちても全滅しないように分散させます
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - cloudflared
+              topologyKey: "kubernetes.io/hostname"
       containers:
       - name: cloudflared
         image: cloudflare/cloudflared:latest
         args:
         - tunnel
-        # ▼ argsはシンプルに戻す（metrics指定を削除）
+        # 【最適化3】 QUICプロトコル (デフォルト) を採用
+        # オンプレミスの光回線環境ならUDP(QUIC)の方が高速で遅延が少ないため、
+        # VPSのように無理に http2 に固定せず、デフォルトの自動選択に任せます。
+        - --metrics
+        - 0.0.0.0:20241
         - run
         env:
         - name: TUNNEL_TOKEN
@@ -30,15 +56,17 @@ spec:
         livenessProbe:
           httpGet:
             path: /ready
-            # ▼ ポートをデフォルトの 20241 に変更！
             port: 20241
           initialDelaySeconds: 10
           periodSeconds: 10
           failureThreshold: 3
         resources:
+          # 【最適化4】 リソース制限の緩和
+          # Proxmox環境ならメモリに余裕があるはずなので、
+          # バッファ不足で切断されないよう、少し余裕を持たせます。
           requests:
-            cpu: 50m
-            memory: 128Mi
+            cpu: 100m
+            memory: 256Mi
           limits:
-            cpu: 500m
-            memory: 512Mi
+            cpu: 1000m
+            memory: 1Gi

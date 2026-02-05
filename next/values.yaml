@@ -2,10 +2,16 @@
 # CI/CD (GitHub Actions) が自動更新する場所
 # ------------------------------------
 image:
-  repository: rnagashiro/my-nextjs-app
-  pullPolicy: IfNotPresent
-  # ★ CIが '9deb18d' のようなコミットハッシュに書き換える
-  tag: "a245412"
+  # ★変更: Docker Hub から GHCR (GitHub Container Registry) へ変更
+  # ※ "rnagashiro" の部分は GitHubのユーザー名/組織名 に合わせてください
+  repository: ghcr.io/kdthesixsense/my-nextjs-app
+  # ★推奨: Always にしておくと、万が一同じタグで中身が変わっても確実に新しいものを引けます
+  pullPolicy: Always
+  # ★ CIが自動で書き換えるので、ここはダミーや初期値でOK
+  tag: "6cd9f8b"
+  digest: "sha256:294ac8ba4679ba343bb9247c675f35532f4dcff6ae2856e097f1f8d1387368c2"
+imagePullSecrets:
+  - name: ghcr-secret
 # ------------------------------------
 # アプリケーション設定
 # ------------------------------------
@@ -62,6 +68,7 @@ appEnv:
   EMAIL_SERVER_USER: "ainfopiaf6@gmail.com"
   EMAIL_FROM: "ainfopiaf6@gmail.com"
   NEXT_PUBLIC_BASE_URL: "https://infopia.nqg1t0.com"
+  NEXTAUTH_URL: "https://infopia.nqg1t0.com" # ★NextAuthを使うならこれも必要になることが多いです
 # ------------------------------------
 # DB設定 (PostgreSQL)
 # ------------------------------------
@@ -78,6 +85,7 @@ migration:
   # ★ 'image:' という階層でネストするのが正しい
   image:
     tagSuffix: "-migrator"
+    digest: "sha256:d2e1f206a6be78165d7a467dbc39c18b003893f76fcab4f9aa1d5ac5580596a0" # ★★★ これを追加してください！ ★★★
   # ★ 'command:' は 'migration:' の直下でOK
   command: ["npm", "run", "db:migrate"]
 # ------------------------------------
@@ -94,6 +102,7 @@ sandbox:
   replicaCount: 3
   image:
     tagSuffix: "-sandbox"
+    digest: "sha256:4aaca727019c44df4a16ad81d1a2d5961b9ae5404d8cb1aa5be9776805a0f19a"
   service:
     port: 4000
   # ▼ resources ブロック
@@ -113,3 +122,12 @@ sandbox:
     targetCPUUtilizationPercentage: 80
   gvisor:
     enabled: true
+# ------------------------------------
+# Cloudflared HPA 設定
+# ------------------------------------
+cloudflared:
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 75

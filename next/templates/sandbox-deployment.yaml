@@ -17,17 +17,21 @@ spec:
       labels:
         app: {{ .Values.releaseName }}-sandbox
     spec:
-      # ★★★★★ ここが必須項目です！ ★★★★★
-      # これを書くことで、このPodだけが gVisor (runsc) 経由で起動します。
-      # GKE Sandboxを使う場合も、自力でgVisorを入れた場合も、この指定は共通で必要です。      # ★★★★★★★★★★★★★★★★★★★★★★★
+      # ★★★ これがないとSandboxだけ起動失敗します (GHCRの合鍵) ★★★
+      imagePullSecrets:
+        - name: ghcr-secret
+
+      # ★★★ gVisor設定 (そのまま維持) ★★★
       {{- if .Values.sandbox.gvisor.enabled }}
       runtimeClassName: gvisor
       {{- end }}
 
       containers:
         - name: sandbox
-          # (以下、元のコードと同じ)
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}{{ .Values.sandbox.image.tagSuffix }}"
+          # ★★★ Level 2 修正ポイント ★★★
+          # Sandbox用ダイジェストがあれば使い、なければ「タグ + Suffix」を使う
+          image: "{{ .Values.image.repository }}{{ if .Values.sandbox.image.digest }}@{{ .Values.sandbox.image.digest }}{{ else }}:{{ .Values.image.tag }}{{ .Values.sandbox.image.tagSuffix }}{{ end }}"
+          
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.sandbox.service.port }}

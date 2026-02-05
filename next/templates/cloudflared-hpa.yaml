@@ -1,0 +1,23 @@
+{{- if .Values.cloudflared.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: cloudflared
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: cloudflared
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: cloudflared
+  minReplicas: {{ .Values.cloudflared.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.cloudflared.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.cloudflared.autoscaling.targetCPUUtilizationPercentage }}
+{{- end }}

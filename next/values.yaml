@@ -40,7 +40,7 @@ app:
   autoscaling:
     enabled: true # HPAを有効にする場合はtrueに変更
     minReplicas: 1
-    maxReplicas: 5
+    maxReplicas: 4
     targetCPUUtilizationPercentage: 80
   pdb:
     enabled: true # PDBを有効にする場合はtrueに変更
@@ -91,7 +91,7 @@ seeding:
 # ------------------------------------
 sandbox:
   enabled: true
-  replicaCount: 2
+  replicaCount: 3
   image:
     tagSuffix: "-sandbox"
   service:
@@ -107,9 +107,9 @@ sandbox:
       # ★ ここにあった autoscaling を削除し、下に移動しました
   # ▼ autoscaling ブロック (resourcesと同じ階層にする)
   autoscaling:
-    enabled: false
-    minReplicas: 1
-    maxReplicas: 5
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 4
     targetCPUUtilizationPercentage: 80
   gvisor:
     enabled: true
